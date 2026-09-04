@@ -1,0 +1,98 @@
+// Paylasilan veri modeli: hem main hem renderer bunu kullanir.
+
+export type ShellKind = 'powershell' | 'cmd' | 'ssh'
+export type TerminalKind = 'local' | 'ssh'
+
+export interface CommandDef {
+  id: string
+  name: string
+  shell: ShellKind
+  text: string
+  /** true ise yeni sekmede calisir, false ise aktif terminale yazilir */
+  runInNewTab: boolean
+}
+
+export interface NetworkProfile {
+  /** Adaptorun MAC adresi (AA-BB-CC-DD-EE-FF). Isimler degisir, MAC degismez. */
+  adapterMac: string | null
+  ip: string
+  prefixLength: number
+  gateway?: string
+  dns?: string[]
+  /** Adaptor takildiginda profili otomatik uygula */
+  autoApply: boolean
+}
+
+export interface TerminalDef {
+  id: string
+  name: string
+  kind: TerminalKind
+  host?: string
+  port?: number
+  username?: string
+  /** Sifre kasasindaki anahtar; sifrenin kendisi JSON'a yazilmaz */
+  credentialRef?: string
+  /** Baglanti sonrasi otomatik calisacak senaryo adimlari */
+  script?: ScriptStep[]
+}
+
+export type ScriptStep =
+  | { type: 'send'; text: string }
+  | { type: 'expect'; pattern: string; timeoutMs?: number }
+  | { type: 'wait'; ms: number }
+
+export interface Project {
+  id: string
+  name: string
+  description: string
+  color: string
+  commands: CommandDef[]
+  network: NetworkProfile
+  terminals: TerminalDef[]
+  createdAt: string
+  updatedAt: string
+}
+
+export interface AdapterInfo {
+  name: string
+  description: string
+  mac: string
+  status: 'Up' | 'Down' | 'Disconnected' | string
+  ipv4: string[]
+  dhcp: boolean
+}
+
+export const PROJECT_COLORS = [
+  '#f97316',
+  '#22c55e',
+  '#3b82f6',
+  '#a855f7',
+  '#ec4899',
+  '#eab308',
+  '#14b8a6',
+  '#ef4444'
+]
+
+export function newId(): string {
+  return crypto.randomUUID()
+}
+
+export function newProject(partial: Partial<Project> = {}): Project {
+  const now = new Date().toISOString()
+  return {
+    id: partial.id ?? newId(),
+    name: partial.name ?? 'Yeni Proje',
+    description: partial.description ?? '',
+    color: partial.color ?? PROJECT_COLORS[Math.floor(Math.random() * PROJECT_COLORS.length)],
+    commands: partial.commands ?? [],
+    network: partial.network ?? {
+      adapterMac: null,
+      ip: '192.168.1.10',
+      prefixLength: 24,
+      autoApply: false
+    },
+    terminals: partial.terminals ?? [],
+    createdAt: partial.createdAt ?? now,
+    updatedAt: now
+  }
+}
