@@ -24,6 +24,13 @@ export interface NetAutoEvent {
   result: NetApplyResult
 }
 
+/** Baglanti teshisi icin proje ag profili ozeti */
+export interface NetContext {
+  adapterMac: string | null
+  ip: string
+  prefixLength: number
+}
+
 export interface TermCreateOptions {
   id: string
   kind: 'local' | 'ssh'
@@ -36,6 +43,7 @@ export interface TermCreateOptions {
   script?: ScriptStep[]
   /** {{ip}} gibi degiskenler icin proje degerleri */
   vars?: Record<string, string>
+  net?: NetContext
 }
 
 export interface TermExitInfo {

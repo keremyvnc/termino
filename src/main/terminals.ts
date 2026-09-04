@@ -6,7 +6,9 @@ import type { TermCreateOptions, TermExitInfo } from '@shared/ipc'
 import type { ScriptStep } from '@shared/types'
 import type { CredentialVault } from './credentials'
 import { ScriptRunner } from './scriptRunner'
+import { diagnoseNetwork, explainSshError } from './netDiag'
 
+const YELLOW = (s: string): string => `\x1b[33m[termino] ${s}\x1b[0m\r\n`
 const GRAY = (s: string): string => `\r\n\x1b[90m[termino] ${s}\x1b[0m\r\n`
 const RED = (s: string): string => `\r\n\x1b[31m[termino] ${s}\x1b[0m\r\n`
 
@@ -120,7 +122,12 @@ class SshSession implements TerminalSession {
     if (ssh.credentialRef && password === null) {
       return this.fail('Şifre kasada bulunamadı. Oturum tanımından şifreyi kaydet.')
     }
-    this.hooks.onData(`\x1b[90m${ssh.username}@${ssh.host}:${ssh.port ?? 22} bağlanıyor…\x1b[0m\r\n`)
+    const port = ssh.port ?? 22
+    this.hooks.onData(`\x1b[90m${ssh.username}@${ssh.host}:${port} bağlanıyor…\x1b[0m\r\n`)
+    // Ag teshisi baglantiya paralel calisir; uyarilar hemen basilir.
+    void diagnoseNetwork(ssh.host, this.opts.net).then((w) => {
+      if (!this.closed) w.forEach((line) => this.hooks.onData(YELLOW(line)))
+    })
 
     this.client
       .on('ready', () => {
@@ -143,14 +150,14 @@ class SshSession implements TerminalSession {
           }
         )
       })
-      .on('error', (e) => this.fail(e.message))
+      .on('error', (e) => this.fail(explainSshError(e.message, ssh.host, port)))
       .on('close', () => this.finish(0))
       .on('keyboard-interactive', (_n, _i, _l, _prompts, finish) => {
         finish(password ? [password] : [])
       })
       .connect({
         host: ssh.host,
-        port: ssh.port ?? 22,
+        port,
         username: ssh.username,
         password: password ?? undefined,
         tryKeyboard: true,

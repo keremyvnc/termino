@@ -87,7 +87,14 @@ function buildTab(projectId: string, opts: OpenOptions, count: number): TermTab 
           credentialRef: def.credentialRef
         },
         script: def.script as ScriptStep[] | undefined,
-        vars: opts.project ? projectVars(opts.project) : undefined
+        vars: opts.project ? projectVars(opts.project) : undefined,
+        net: opts.project
+          ? {
+              adapterMac: opts.project.network.adapterMac,
+              ip: opts.project.network.ip,
+              prefixLength: opts.project.network.prefixLength
+            }
+          : undefined
       }
     }
   }
