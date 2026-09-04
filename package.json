@@ -10,7 +10,6 @@
     "build": "electron-vite build",
     "preview": "electron-vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
-    "postinstall": "electron-builder install-app-deps",
     "dist": "electron-vite build && electron-builder --win"
   },
   "build": {
@@ -34,7 +33,9 @@
       "perMachine": false,
       "shortcutName": "Termino"
     },
-    "extraResources": []
+    "extraResources": [],
+    "npmRebuild": false,
+    "nodeGypRebuild": false
   },
   "dependencies": {
     "@xterm/addon-fit": "^0.11.0",
