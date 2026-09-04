@@ -7,18 +7,11 @@ import { useAppStore } from '../store/useAppStore'
 import { useTerminalStore } from '../store/useTerminalStore'
 
 /** Atlama sunucusu uzerinden ikinci cihaza gecip su - olan zincir icin hazir senaryo. */
-const JUMP_TEMPLATE = `# 1) ilk cihaza girildi, prompt bekle
-expect: [$#] @15000
-# 2) ikinci cihaza anahtarla atla (host key sorusu otomatik gecilir)
+const JUMP_TEMPLATE = `# Her satir bir komut. Sifre satirlari "password:" istemi gelince otomatik gonderilir.
 send: ssh -o StrictHostKeyChecking=no -i /home/tci/.ssh/id_rsa_kvm modman@10.1.1.8
-expect: (?i)password: @20000
 send: {{secret:kvm}}
-expect: [$#] @15000
-# 3) root ol
 send: su -
-expect: (?i)password: @10000
-send: {{secret:su}}
-expect: # @10000`
+send: {{secret:su}}`
 
 export function TerminalDefsPanel({ project }: { project: Project }) {
   const updateProject = useAppStore((s) => s.updateProject)
@@ -298,7 +291,11 @@ function TerminalEditor({
             className="input font-mono text-xs"
             value={row.name}
             onChange={(e) =>
-              setSecrets((r) => r.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))
+              setSecrets((r) =>
+                r.map((x, j) =>
+                  j === i ? { ...x, name: e.target.value.replace(/[^\w-]/g, '_') } : x
+                )
+              )
             }
             placeholder="ad"
           />
@@ -336,11 +333,12 @@ function TerminalEditor({
         spellCheck={false}
       />
       <p className="mb-2 text-[11px] leading-relaxed text-muted">
-        Satır başına bir adım: <code className="font-mono">send:</code>,{' '}
-        <code className="font-mono">expect:</code> (düzenli ifade, sonuna{' '}
-        <code className="font-mono">@ms</code>), <code className="font-mono">wait:</code>,{' '}
-        <code className="font-mono">#</code> yorum. Değişkenler: {'{{ip}}'}, {'{{gateway}}'},{' '}
-        {'{{project}}'}, {'{{secret:ad}}'}.
+        Satır başına bir komut (<code className="font-mono">send:</code>). Her komuttan sonra çıktı
+        durulana kadar beklenir; <code className="font-mono">{'{{secret:ad}}'}</code> satırı ise
+        şifre istemi gelince gönderilir. İsteğe bağlı: <code className="font-mono">expect:</code>{' '}
+        (düzenli ifade, sonuna <code className="font-mono">@ms</code>),{' '}
+        <code className="font-mono">wait:</code>, <code className="font-mono">#</code> yorum.
+        Değişkenler: {'{{ip}}'}, {'{{gateway}}'}, {'{{project}}'}.
       </p>
       <div className="flex justify-end gap-1">
         <button className="btn" onClick={onCancel}>
