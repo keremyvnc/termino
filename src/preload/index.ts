@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import { IPC, type TerminoApi, type TermCreateOptions, type TermExitInfo } from '@shared/ipc'
-import type { AdapterInfo, Project } from '@shared/types'
+import { IPC, type TerminoApi, type TermCreateOptions, type TermExitInfo, type NetAutoEvent } from '@shared/ipc'
+import type { AdapterInfo, NetworkProfile, Project } from '@shared/types'
 
 const api: TerminoApi = {
   projects: {
@@ -14,6 +14,15 @@ const api: TerminoApi = {
       const handler = (_: unknown, adapters: AdapterInfo[]): void => cb(adapters)
       ipcRenderer.on(IPC.netAdaptersChanged, handler)
       return () => ipcRenderer.removeListener(IPC.netAdaptersChanged, handler)
+    },
+    apply: (mac: string, profile: NetworkProfile) => ipcRenderer.invoke(IPC.netApply, mac, profile),
+    dhcp: (mac: string) => ipcRenderer.invoke(IPC.netDhcp, mac),
+    restore: (mac: string) => ipcRenderer.invoke(IPC.netRestore, mac),
+    backup: (mac: string) => ipcRenderer.invoke(IPC.netBackup, mac),
+    onAutoApplied: (cb) => {
+      const handler = (_: unknown, ev: NetAutoEvent): void => cb(ev)
+      ipcRenderer.on(IPC.netAutoApplied, handler)
+      return () => ipcRenderer.removeListener(IPC.netAutoApplied, handler)
     }
   },
   term: {

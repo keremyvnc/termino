@@ -11,13 +11,27 @@ import { Toast } from './components/Toast'
 export default function App() {
   const load = useAppStore((s) => s.load)
   const setAdapters = useAppStore((s) => s.setAdapters)
+  const showToast = useAppStore((s) => s.showToast)
+  const refreshAdapters = useAppStore((s) => s.refreshAdapters)
   const loading = useAppStore((s) => s.loading)
   const project = useSelectedProject()
 
   useEffect(() => {
     void load()
-    return window.api.network.onAdaptersChanged(setAdapters)
-  }, [load, setAdapters])
+    const offAdapters = window.api.network.onAdaptersChanged(setAdapters)
+    const offAuto = window.api.network.onAutoApplied((ev) => {
+      showToast(
+        ev.result.ok
+          ? `${ev.projectName}: ${ev.adapterName} profili otomatik uygulandı`
+          : `${ev.projectName}: otomatik uygulama başarısız — ${ev.result.message}`
+      )
+      setTimeout(() => void refreshAdapters(), 1500)
+    })
+    return () => {
+      offAdapters()
+      offAuto()
+    }
+  }, [load, setAdapters, showToast, refreshAdapters])
 
   return (
     <div className="flex h-full flex-col">

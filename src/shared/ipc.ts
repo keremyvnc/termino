@@ -1,4 +1,28 @@
-import type { Project, AdapterInfo } from './types'
+import type { Project, AdapterInfo, NetworkProfile } from './types'
+
+export interface NetApplyResult {
+  ok: boolean
+  message: string
+}
+
+export interface NetBackup {
+  mac: string
+  adapterName: string
+  takenAt: string
+  dhcp: boolean
+  ip?: string
+  prefixLength?: number
+  gateway?: string
+  dns: string[]
+}
+
+/** Otomatik uygulama bildirimi */
+export interface NetAutoEvent {
+  projectId: string
+  projectName: string
+  adapterName: string
+  result: NetApplyResult
+}
 
 export interface TermCreateOptions {
   id: string
@@ -24,6 +48,11 @@ export interface TerminoApi {
   network: {
     listAdapters(): Promise<AdapterInfo[]>
     onAdaptersChanged(cb: (adapters: AdapterInfo[]) => void): () => void
+    apply(mac: string, profile: NetworkProfile): Promise<NetApplyResult>
+    dhcp(mac: string): Promise<NetApplyResult>
+    restore(mac: string): Promise<NetApplyResult>
+    backup(mac: string): Promise<NetBackup | null>
+    onAutoApplied(cb: (ev: NetAutoEvent) => void): () => void
   }
   term: {
     create(opts: TermCreateOptions): Promise<string>
@@ -46,6 +75,11 @@ export const IPC = {
   projectsRemove: 'projects:remove',
   netListAdapters: 'net:listAdapters',
   netAdaptersChanged: 'net:adaptersChanged',
+  netApply: 'net:apply',
+  netDhcp: 'net:dhcp',
+  netRestore: 'net:restore',
+  netBackup: 'net:backup',
+  netAutoApplied: 'net:autoApplied',
   termCreate: 'term:create',
   termWrite: 'term:write',
   termResize: 'term:resize',

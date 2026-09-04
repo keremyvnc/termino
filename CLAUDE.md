@@ -27,6 +27,15 @@ env -u ELECTRON_RUN_AS_NODE npx electron .
 - `src/renderer/` React UI. Durum: zustand (`store/useAppStore.ts`). Stil: Tailwind v4, tema tokenlari `index.css` icinde.
 - `src/shared/` Ortak tipler (`types.ts`) ve IPC kanal adlari (`ipc.ts`).
 
+## Ag islemleri (Asama 3)
+
+- `src/main/netApply.ts`: `applyProfile`, `setDhcp`, `restoreBackup`. Yukseltme `Start-Process -Verb RunAs` ile tek seferlik;
+  betik `%TEMP%/termino/net-*.ps1`, sonuc JSON'u BOM'suz UTF-8 yazilir ve okunur okunmaz silinir.
+- Ilk uygulamadan once adaptorun mevcut durumu `%APPDATA%/termino/netbackups/<mac>.json` dosyasina alinir; geri yukleme bu dosyayi kullanir ve siler.
+- `src/main/autoApply.ts`: adaptor Up olunca autoApply acik projenin profilini uygular, renderer'a `net:autoApplied` gonderir.
+- Tani logu: `%APPDATA%/termino/termino.log` (renderer yuklemeleri, ag islemleri).
+- Testte VirtualBox Host-Only adaptoru (Ethernet 8, 192.168.56.1) kullanildi; gercek karta dokunma.
+
 ## Kurallar
 
 - Sifreler asla proje JSON'una yazilmaz; `credentialRef` ile safeStorage kasasina isaret edilir.
@@ -38,7 +47,7 @@ env -u ELECTRON_RUN_AS_NODE npx electron .
 ## Asamalar
 
 1. Iskelet, proje CRUD, temel UI, adaptor listesi (tamamlandi)
-2. xterm.js + node-pty ile yerel terminal sekmeleri, komut calistirma, `{{ip}}` degiskenleri
-3. Canli adaptor izleme, UAC ile IP/subnet atama, DHCP'ye donus, otomatik uygulama
+2. xterm.js + node-pty ile yerel terminal sekmeleri, komut calistirma, `{{ip}}` degiskenleri (tamamlandi)
+3. Canli adaptor izleme, UAC ile IP/subnet atama, DHCP'ye donus, otomatik uygulama (tamamlandi)
 4. SSH (ssh2), sifre kasasi, senaryo motoru (send/expect/wait), provider arayuzu
 5. Cila: kisayollar, dis/ic aktarma, kurulum paketi
