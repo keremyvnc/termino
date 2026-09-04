@@ -41,6 +41,10 @@ env -u ELECTRON_RUN_AS_NODE npx electron .
 - `src/main/terminals.ts`: `TerminalSession` arayuzu; `LocalPtySession` (node-pty) ve `SshSession` (ssh2). Yeni tur eklemek icin ayni arayuzu uygula ve `TerminalManager.create` icinde sec.
 - `src/main/credentials.ts`: safeStorage (DPAPI) kasasi, `%APPDATA%/termino/vault.json`. Anahtar: `term:<oturumId>`. Sifre yalnizca main'de cozulur.
 - `src/main/scriptRunner.ts` + `src/shared/script.ts`: satir tabanli senaryo (`send:`, `expect: regex @ms`, `wait: ms`, `#` yorum). `{{ip}}` gibi degiskenler proje profilinden, `{{secret:ref}}` kasadan (sadece main) doldurulur. Yerel ve SSH oturumlarinda calisir.
+- Ek sifreler: oturum tanimindaki `secrets` yalnizca adlari tutar; degerler kasada `term:<oturumId>:<ad>`.
+  Senaryoda `{{secret:ad}}` once bu anahtarda, sonra ham ad olarak aranir. Oturum silinince `removePrefix` ile hepsi gider.
+- Zincirleme baglanti (atlama sunucusu -> ssh -i ... -> su -) ayri bir mekanizma degil, senaryodur; editordeki
+  "Zincir sablonu" butonu ornek doldurur. `expect:` deseninde `(?i)` oneki desteklenir (i bayragina cevrilir).
 - Test: `ssh2.Server` ile sahte sunucu yazip 127.0.0.1:2222'de calistirmak yeterli; sisteme sshd kurmaya gerek yok.
 
 ## Kisayollar ve cila (Asama 5)

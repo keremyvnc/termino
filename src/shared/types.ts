@@ -32,6 +32,8 @@ export interface TerminalDef {
   username?: string
   /** Sifre kasasindaki anahtar; sifrenin kendisi JSON'a yazilmaz */
   credentialRef?: string
+  /** Senaryoda {{secret:ad}} ile kullanilan ek sifrelerin adlari (degerler kasada) */
+  secrets?: string[]
   /** Baglanti sonrasi otomatik calisacak senaryo adimlari */
   script?: ScriptStep[]
 }

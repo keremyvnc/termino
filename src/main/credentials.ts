@@ -53,6 +53,18 @@ export class CredentialVault {
     return Boolean((await this.load())[ref])
   }
 
+  async removePrefix(prefix: string): Promise<void> {
+    const store = await this.load()
+    let changed = false
+    for (const k of Object.keys(store)) {
+      if (k === prefix || k.startsWith(prefix + ':')) {
+        delete store[k]
+        changed = true
+      }
+    }
+    if (changed) await this.persist()
+  }
+
   async remove(ref: string): Promise<void> {
     const store = await this.load()
     if (ref in store) {

@@ -92,21 +92,21 @@ export function TerminalArea({ project }: { project: Project }) {
         </div>
         <div ref={menuRef} className="relative mb-1 flex shrink-0 items-center">
           <button
-            className="btn-icon rounded-r-none"
+            className="btn btn-primary rounded-r-none border-r-0"
             title="Yeni PowerShell (Ctrl+Shift+T)"
             onClick={() => void open(project.id, { project })}
           >
-            <Plus size={14} />
+            <Plus size={13} /> Terminal
           </button>
           <button
-            className="btn-icon w-5 rounded-l-none"
+            className="btn btn-primary rounded-l-none px-1.5"
             onClick={() => setMenu((m) => !m)}
-            title="Kabuk seç"
+            title="Tür veya tanımlı oturum seç"
           >
             <ChevronDown size={12} />
           </button>
           {menu && (
-            <div className="absolute right-0 top-8 z-20 w-40 rounded-md border border-border bg-panel-2 p-1 shadow-lg">
+            <div className="absolute right-0 top-8 z-20 w-56 rounded-md border border-border bg-panel-2 p-1 shadow-lg">
               {(['powershell', 'cmd'] as const).map((sh) => (
                 <button
                   key={sh}

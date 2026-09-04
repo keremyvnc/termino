@@ -28,6 +28,26 @@ interface SessionHooks {
   onExit: (info: TermExitInfo) => void
 }
 
+/** {{degisken}} ve {{secret:ad}} cozumu. Secret once term:<defId>:<ad>, sonra ham ad olarak aranir. */
+function makeResolver(
+  vault: CredentialVault,
+  vars: Record<string, string>,
+  defId?: string
+): (text: string) => Promise<string> {
+  return async (text) => {
+    let out = text.replace(/\{\{\s*([a-zA-Z_]+)\s*\}\}/g, (m, k: string) => vars[k] ?? m)
+    const secretRe = /\{\{\s*secret:([^}\s]+)\s*\}\}/g
+    for (const m of [...out.matchAll(secretRe)]) {
+      const name = m[1]
+      let v = defId ? await vault.get(`term:${defId}:${name}`) : null
+      if (v === null) v = await vault.get(name)
+      if (v === null) throw new Error(`kasada "${name}" adlı şifre yok`)
+      out = out.replace(m[0], v)
+    }
+    return out
+  }
+}
+
 class LocalPtySession implements TerminalSession {
   private proc: pty.IPty
   private runner: ScriptRunner | null = null
@@ -35,7 +55,8 @@ class LocalPtySession implements TerminalSession {
   constructor(
     public id: string,
     opts: TermCreateOptions,
-    hooks: SessionHooks
+    hooks: SessionHooks,
+    vault: CredentialVault
   ) {
     const shell =
       opts.shell === 'cmd' ? 'cmd.exe' : (process.env['TERMINO_PWSH'] ?? 'powershell.exe')
@@ -57,10 +78,9 @@ class LocalPtySession implements TerminalSession {
       hooks.onExit({ id, exitCode, signal })
     })
     if (opts.script?.length) {
-      const vars = opts.vars ?? {}
       this.runner = new ScriptRunner(
         { write: (d) => this.write(d), note: (t) => hooks.onData(GRAY(t)) },
-        async (t) => t.replace(/\{\{\s*([a-zA-Z_]+)\s*\}\}/g, (m, k: string) => vars[k] ?? m)
+        makeResolver(vault, opts.vars ?? {}, opts.defId)
       )
       void this.runner.run(opts.script).finally(() => (this.runner = null))
     }
@@ -101,18 +121,8 @@ class SshSession implements TerminalSession {
     void this.connect()
   }
 
-  private async resolveVars(text: string): Promise<string> {
-    const vars = this.opts.vars ?? {}
-    let out = text.replace(/\{\{\s*([a-zA-Z_]+)\s*\}\}/g, (m, k: string) => vars[k] ?? m)
-    // {{secret:ref}} yalnizca burada, main surecinde cozulur.
-    const secretRe = /\{\{\s*secret:([^}\s]+)\s*\}\}/g
-    const matches = [...out.matchAll(secretRe)]
-    for (const m of matches) {
-      const v = await this.vault.get(m[1])
-      if (v === null) throw new Error(`kasada "${m[1]}" yok`)
-      out = out.replace(m[0], v)
-    }
-    return out
+  private resolveVars(text: string): Promise<string> {
+    return makeResolver(this.vault, this.opts.vars ?? {}, this.opts.defId)(text)
   }
 
   private async connect(): Promise<void> {
@@ -237,7 +247,7 @@ export class TerminalManager {
     const session =
       opts.kind === 'ssh'
         ? new SshSession(id, opts, hooks, this.vault)
-        : new LocalPtySession(id, opts, hooks)
+        : new LocalPtySession(id, opts, hooks, this.vault)
     this.sessions.set(id, session)
     return id
   }

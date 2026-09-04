@@ -1,10 +1,24 @@
 import { useEffect, useState } from 'react'
-import { KeyRound, Pencil, Play, Plus, Server, Terminal, Trash2, X } from 'lucide-react'
+import { KeyRound, Pencil, Play, Plus, Server, Terminal, Trash2, Wand2, X } from 'lucide-react'
 import type { Project, TerminalDef, TerminalKind } from '@shared/types'
 import { newId } from '@shared/types'
 import { parseScript, stringifyScript } from '@shared/script'
 import { useAppStore } from '../store/useAppStore'
 import { useTerminalStore } from '../store/useTerminalStore'
+
+/** Atlama sunucusu uzerinden ikinci cihaza gecip su - olan zincir icin hazir senaryo. */
+const JUMP_TEMPLATE = `# 1) ilk cihaza girildi, prompt bekle
+expect: [$#] @15000
+# 2) ikinci cihaza anahtarla atla (host key sorusu otomatik gecilir)
+send: ssh -o StrictHostKeyChecking=no -i /home/tci/.ssh/id_rsa_kvm modman@10.1.1.8
+expect: (?i)password: @20000
+send: {{secret:kvm}}
+expect: [$#] @15000
+# 3) root ol
+send: su -
+expect: (?i)password: @10000
+send: {{secret:su}}
+expect: # @10000`
 
 export function TerminalDefsPanel({ project }: { project: Project }) {
   const updateProject = useAppStore((s) => s.updateProject)
@@ -21,7 +35,8 @@ export function TerminalDefsPanel({ project }: { project: Project }) {
     setEditing(null)
   }
   const remove = (t: TerminalDef): void => {
-    if (t.credentialRef) void window.api.creds.remove(t.credentialRef)
+    // Baglanti sifresi ve tum ek sifreler (term:<id>:*) kasadan silinir.
+    void window.api.creds.removePrefix(`term:${t.id}`)
     void updateProject({ id: project.id, terminals: project.terminals.filter((x) => x.id !== t.id) })
   }
   const connect = (t: TerminalDef): void => {
@@ -54,7 +69,8 @@ export function TerminalDefsPanel({ project }: { project: Project }) {
 
       {project.terminals.length === 0 && !editing && (
         <p className="py-6 text-center text-xs text-muted">
-          Tek tıkla açılacak SSH veya yerel oturumları burada tanımla.
+          Tek tıkla açılacak SSH veya yerel oturumları burada tanımla. Zincirleme bağlantılar
+          (atlama sunucusu, su) senaryo ile aynı oturumda yapılır.
         </p>
       )}
 
@@ -102,6 +118,9 @@ export function TerminalDefsPanel({ project }: { project: Project }) {
                 {t.credentialRef && (
                   <KeyRound size={10} className="ml-1 text-emerald-400" aria-label="şifre kayıtlı" />
                 )}
+                {t.secrets && t.secrets.length > 0 && (
+                  <span className="ml-1 text-[10px]">+{t.secrets.length} şifre</span>
+                )}
               </div>
             )}
           </li>
@@ -109,6 +128,12 @@ export function TerminalDefsPanel({ project }: { project: Project }) {
       </ul>
     </div>
   )
+}
+
+interface SecretRow {
+  name: string
+  value: string
+  stored: boolean
 }
 
 function TerminalEditor({
@@ -126,6 +151,9 @@ function TerminalEditor({
   const [password, setPassword] = useState('')
   const [hasSecret, setHasSecret] = useState(false)
   const [scriptText, setScriptText] = useState(stringifyScript(def.script))
+  const [secrets, setSecrets] = useState<SecretRow[]>(
+    (def.secrets ?? []).map((name) => ({ name, value: '', stored: true }))
+  )
   const [saving, setSaving] = useState(false)
   const credRef = def.credentialRef ?? `term:${def.id}`
 
@@ -134,6 +162,8 @@ function TerminalEditor({
   }, [credRef])
 
   const valid = d.name.trim() && (d.kind === 'local' || (d.host && d.username))
+
+  const secretKey = (name: string): string => `term:${def.id}:${name}`
 
   const submit = async (): Promise<void> => {
     setSaving(true)
@@ -144,12 +174,37 @@ function TerminalEditor({
         credentialRef = credRef
       }
       if (d.kind === 'ssh' && !password && hasSecret) credentialRef = credRef
-      onSave({ ...d, credentialRef, script: parseScript(scriptText) })
+
+      const names: string[] = []
+      for (const row of secrets) {
+        const name = row.name.trim().replace(/[^\w-]/g, '_')
+        if (!name) continue
+        if (row.value) await window.api.creds.set(secretKey(name), row.value)
+        else if (!row.stored) continue // ad var, deger yok, kayitli da degil: atla
+        names.push(name)
+      }
+      // Silinen ek sifreleri kasadan da kaldir.
+      for (const old of def.secrets ?? []) {
+        if (!names.includes(old)) await window.api.creds.remove(secretKey(old))
+      }
+
+      onSave({ ...d, credentialRef, secrets: names, script: parseScript(scriptText) })
     } catch (e) {
       onError('Kaydedilemedi: ' + String((e as Error).message ?? e))
     } finally {
       setSaving(false)
     }
+  }
+
+  const applyTemplate = (): void => {
+    setScriptText(JUMP_TEMPLATE)
+    setSecrets((rows) => {
+      const have = new Set(rows.map((r) => r.name))
+      const add: SecretRow[] = []
+      if (!have.has('kvm')) add.push({ name: 'kvm', value: '', stored: false })
+      if (!have.has('su')) add.push({ name: 'su', value: '', stored: false })
+      return [...rows, ...add]
+    })
   }
 
   return (
@@ -166,7 +221,7 @@ function TerminalEditor({
         autoFocus
         value={d.name}
         onChange={(e) => setD({ ...d, name: e.target.value })}
-        placeholder="örn. Test cihazı"
+        placeholder="örn. KVM (10.1.1.1 üzerinden)"
       />
       <label className="label">Tür</label>
       <select
@@ -186,7 +241,7 @@ function TerminalEditor({
                 className="input font-mono"
                 value={d.host ?? ''}
                 onChange={(e) => setD({ ...d, host: e.target.value.trim() })}
-                placeholder="192.168.1.20"
+                placeholder="10.1.1.1"
               />
             </div>
             <div>
@@ -207,44 +262,91 @@ function TerminalEditor({
             placeholder="root"
           />
           <label className="label">
-            Şifre {hasSecret && <span className="normal-case text-emerald-400">· kasada kayıtlı</span>}
+            Şifre{' '}
+            {hasSecret && <span className="normal-case text-emerald-400">· kasada kayıtlı</span>}
           </label>
           <input
-            className="input mb-1 font-mono"
+            className="input mb-2 font-mono"
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder={hasSecret ? 'değiştirmek için yaz' : 'bağlantı şifresi'}
             autoComplete="off"
           />
-          <p className="mb-2 text-[11px] text-muted">
-            Windows DPAPI ile şifrelenir, proje dosyasına yazılmaz. Senaryoda{' '}
-            <code className="font-mono">{'{{secret:' + credRef + '}}'}</code> ile kullanılabilir.
-          </p>
         </>
       )}
-      <label className="label">Bağlantı sonrası senaryo (opsiyonel)</label>
+
+      <div className="mb-1 flex items-center justify-between">
+        <label className="label mb-0">Ek şifreler (senaryo için)</label>
+        <button
+          className="btn-icon h-6 w-6"
+          title="Ek şifre ekle"
+          onClick={() => setSecrets((r) => [...r, { name: '', value: '', stored: false }])}
+        >
+          <Plus size={12} />
+        </button>
+      </div>
+      {secrets.length === 0 && (
+        <p className="mb-2 text-[11px] text-muted">
+          İkinci cihazın veya <code className="font-mono">su</code> şifresi gibi değerler. Senaryoda{' '}
+          <code className="font-mono">{'{{secret:ad}}'}</code> ile kullanılır.
+        </p>
+      )}
+      {secrets.map((row, i) => (
+        <div key={i} className="mb-1.5 grid grid-cols-[96px_1fr_28px] items-center gap-1.5">
+          <input
+            className="input font-mono text-xs"
+            value={row.name}
+            onChange={(e) =>
+              setSecrets((r) => r.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))
+            }
+            placeholder="ad"
+          />
+          <input
+            className="input font-mono text-xs"
+            type="password"
+            value={row.value}
+            onChange={(e) =>
+              setSecrets((r) => r.map((x, j) => (j === i ? { ...x, value: e.target.value } : x)))
+            }
+            placeholder={row.stored ? 'kasada kayıtlı · değiştirmek için yaz' : 'şifre'}
+            autoComplete="off"
+          />
+          <button
+            className="btn-icon h-6 w-6 hover:text-red-300"
+            onClick={() => setSecrets((r) => r.filter((_, j) => j !== i))}
+            title="Kaldır"
+          >
+            <X size={12} />
+          </button>
+        </div>
+      ))}
+
+      <div className="mb-1 mt-2 flex items-center justify-between">
+        <label className="label mb-0">Bağlantı sonrası senaryo</label>
+        <button className="btn" title="Atlama sunucusu + su - şablonunu doldur" onClick={applyTemplate}>
+          <Wand2 size={12} /> Zincir şablonu
+        </button>
+      </div>
       <textarea
-        className="input mb-1 h-24 resize-y font-mono text-xs"
+        className="input mb-1 h-32 resize-y font-mono text-xs"
         value={scriptText}
         onChange={(e) => setScriptText(e.target.value)}
-        placeholder={'expect: \\$ @10000\nsend: cd /opt/test\nsend: ./run.sh {{ip}}'}
+        placeholder={'expect: [$#] @15000\nsend: ssh -i /home/tci/.ssh/id_rsa_kvm modman@10.1.1.8\nexpect: (?i)password:\nsend: {{secret:kvm}}'}
         spellCheck={false}
       />
-      <p className="mb-2 text-[11px] text-muted">
+      <p className="mb-2 text-[11px] leading-relaxed text-muted">
         Satır başına bir adım: <code className="font-mono">send:</code>,{' '}
-        <code className="font-mono">expect:</code> (regex, sonuna <code className="font-mono">@ms</code>),{' '}
-        <code className="font-mono">wait:</code>. Değişkenler: {'{{ip}}'}, {'{{gateway}}'}, {'{{project}}'}.
+        <code className="font-mono">expect:</code> (düzenli ifade, sonuna{' '}
+        <code className="font-mono">@ms</code>), <code className="font-mono">wait:</code>,{' '}
+        <code className="font-mono">#</code> yorum. Değişkenler: {'{{ip}}'}, {'{{gateway}}'},{' '}
+        {'{{project}}'}, {'{{secret:ad}}'}.
       </p>
       <div className="flex justify-end gap-1">
         <button className="btn" onClick={onCancel}>
           Vazgeç
         </button>
-        <button
-          className="btn btn-primary"
-          disabled={!valid || saving}
-          onClick={() => void submit()}
-        >
+        <button className="btn btn-primary" disabled={!valid || saving} onClick={() => void submit()}>
           Kaydet
         </button>
       </div>

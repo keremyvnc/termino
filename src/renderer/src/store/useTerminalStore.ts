@@ -87,6 +87,7 @@ function buildTab(projectId: string, opts: OpenOptions, count: number): TermTab 
           credentialRef: def.credentialRef
         },
         script: def.script as ScriptStep[] | undefined,
+        defId: def.id,
         vars: opts.project ? projectVars(opts.project) : undefined,
         net: opts.project
           ? {
@@ -110,6 +111,7 @@ function buildTab(projectId: string, opts: OpenOptions, count: number): TermTab 
       kind: 'local',
       shell,
       script: def?.script as ScriptStep[] | undefined,
+      defId: def?.id,
       vars: opts.project ? projectVars(opts.project) : undefined
     }
   }

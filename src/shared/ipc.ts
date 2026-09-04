@@ -44,6 +44,8 @@ export interface TermCreateOptions {
   /** {{ip}} gibi degiskenler icin proje degerleri */
   vars?: Record<string, string>
   net?: NetContext
+  /** Oturum tanimi id'si; {{secret:ad}} once term:<id>:<ad> olarak aranir */
+  defId?: string
 }
 
 export interface TermExitInfo {
@@ -80,6 +82,7 @@ export interface TerminoApi {
     set(ref: string, secret: string): Promise<void>
     has(ref: string): Promise<boolean>
     remove(ref: string): Promise<void>
+    removePrefix(prefix: string): Promise<void>
     available(): Promise<boolean>
   }
   app: {
@@ -113,6 +116,7 @@ export const IPC = {
   credSet: 'cred:set',
   credHas: 'cred:has',
   credRemove: 'cred:remove',
+  credRemovePrefix: 'cred:removePrefix',
   credAvailable: 'cred:available',
   appVersion: 'app:version',
   appDataDir: 'app:dataDir',

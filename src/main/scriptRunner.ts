@@ -57,11 +57,18 @@ export class ScriptRunner {
   }
 
   private expect(pattern: string, timeoutMs: number): Promise<void> {
+    // "(?i)" oneki JS'te gecersiz; onu i bayragina cevir. Gecersiz regex ise duz metin ara.
+    let flags = ''
+    let src = pattern
+    if (src.startsWith('(?i)')) {
+      flags = 'i'
+      src = src.slice(4)
+    }
     let re: RegExp
     try {
-      re = new RegExp(pattern)
+      re = new RegExp(src, flags)
     } catch {
-      re = new RegExp(pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+      re = new RegExp(src.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), flags)
     }
     if (re.test(this.buffer)) {
       this.buffer = ''

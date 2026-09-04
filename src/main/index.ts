@@ -106,6 +106,7 @@ function registerIpc(): void {
   ipcMain.handle(IPC.credSet, (_e, ref: string, secret: string) => logged('cred:set', () => vault.set(ref, secret).then(() => ref)))
   ipcMain.handle(IPC.credHas, (_e, ref: string) => vault.has(ref))
   ipcMain.handle(IPC.credRemove, (_e, ref: string) => vault.remove(ref))
+  ipcMain.handle(IPC.credRemovePrefix, (_e, prefix: string) => vault.removePrefix(prefix))
   ipcMain.handle(IPC.credAvailable, () => vault.available())
   ipcMain.handle(IPC.appVersion, () => app.getVersion())
   ipcMain.handle(IPC.appDataDir, () => store.directory)

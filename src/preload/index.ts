@@ -45,6 +45,7 @@ const api: TerminoApi = {
     set: (ref, secret) => ipcRenderer.invoke(IPC.credSet, ref, secret),
     has: (ref) => ipcRenderer.invoke(IPC.credHas, ref),
     remove: (ref) => ipcRenderer.invoke(IPC.credRemove, ref),
+    removePrefix: (prefix) => ipcRenderer.invoke(IPC.credRemovePrefix, prefix),
     available: () => ipcRenderer.invoke(IPC.credAvailable)
   },
   app: {
