@@ -41,6 +41,12 @@ const api: TerminoApi = {
       return () => ipcRenderer.removeListener(IPC.termExit, handler)
     }
   },
+  creds: {
+    set: (ref, secret) => ipcRenderer.invoke(IPC.credSet, ref, secret),
+    has: (ref) => ipcRenderer.invoke(IPC.credHas, ref),
+    remove: (ref) => ipcRenderer.invoke(IPC.credRemove, ref),
+    available: () => ipcRenderer.invoke(IPC.credAvailable)
+  },
   app: {
     version: () => ipcRenderer.invoke(IPC.appVersion),
     dataDir: () => ipcRenderer.invoke(IPC.appDataDir),

@@ -1,4 +1,4 @@
-import { ChevronDown, Plus, Terminal as TerminalIcon, X } from 'lucide-react'
+import { ChevronDown, Plus, Server, Terminal as TerminalIcon, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import type { Project } from '@shared/types'
 import { useTerminalStore } from '../store/useTerminalStore'
@@ -30,7 +30,7 @@ export function TerminalArea({ project }: { project: Project }) {
       if (!e.ctrlKey || !e.shiftKey) return
       if (e.key === 'T') {
         e.preventDefault()
-        void open(project.id)
+        void open(project.id, { project })
       } else if (e.key === 'W' && activeId) {
         e.preventDefault()
         close(activeId)
@@ -66,6 +66,7 @@ export function TerminalArea({ project }: { project: Project }) {
                         : 'bg-amber-400'
                   }`}
                 />
+                {t.kind === 'ssh' && <Server size={11} className="text-accent" />}
                 <span className="max-w-40 truncate">{t.title}</span>
                 <button
                   className="ml-1 rounded p-0.5 text-muted opacity-0 hover:bg-border hover:text-fg group-hover:opacity-100"
@@ -85,7 +86,7 @@ export function TerminalArea({ project }: { project: Project }) {
           <button
             className="btn-icon rounded-r-none"
             title="Yeni PowerShell (Ctrl+Shift+T)"
-            onClick={() => void open(project.id)}
+            onClick={() => void open(project.id, { project })}
           >
             <Plus size={14} />
           </button>
@@ -104,11 +105,29 @@ export function TerminalArea({ project }: { project: Project }) {
                   className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs hover:bg-border/60"
                   onClick={() => {
                     setMenu(false)
-                    void open(project.id, sh)
+                    void open(project.id, { shell: sh, project })
                   }}
                 >
                   <TerminalIcon size={12} className="text-muted" />
                   {sh === 'cmd' ? 'CMD' : 'PowerShell'}
+                </button>
+              ))}
+              {project.terminals.length > 0 && <div className="my-1 border-t border-border" />}
+              {project.terminals.map((d) => (
+                <button
+                  key={d.id}
+                  className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs hover:bg-border/60"
+                  onClick={() => {
+                    setMenu(false)
+                    void open(project.id, { def: d, project })
+                  }}
+                >
+                  {d.kind === 'ssh' ? (
+                    <Server size={12} className="text-accent" />
+                  ) : (
+                    <TerminalIcon size={12} className="text-muted" />
+                  )}
+                  <span className="truncate">{d.name}</span>
                 </button>
               ))}
             </div>
@@ -125,7 +144,7 @@ export function TerminalArea({ project }: { project: Project }) {
             <div className="text-center">
               <TerminalIcon size={36} className="mx-auto mb-3 opacity-40" />
               <p>Bu projede açık terminal yok.</p>
-              <button className="btn btn-primary mt-4" onClick={() => void open(project.id)}>
+              <button className="btn btn-primary mt-4" onClick={() => void open(project.id, { project })}>
                 <Plus size={12} /> PowerShell aç
               </button>
               <p className="mt-3 text-xs opacity-60">Ctrl+Shift+T yeni sekme · sağdaki Komutlar panelinden ▶ ile çalıştır</p>

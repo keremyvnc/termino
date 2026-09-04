@@ -1,12 +1,15 @@
-import { useState } from 'react'
-import { KeyRound, Pencil, Plus, Server, Trash2, X } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { KeyRound, Pencil, Play, Plus, Server, Terminal, Trash2, X } from 'lucide-react'
 import type { Project, TerminalDef, TerminalKind } from '@shared/types'
 import { newId } from '@shared/types'
+import { parseScript, stringifyScript } from '@shared/script'
 import { useAppStore } from '../store/useAppStore'
+import { useTerminalStore } from '../store/useTerminalStore'
 
 export function TerminalDefsPanel({ project }: { project: Project }) {
   const updateProject = useAppStore((s) => s.updateProject)
   const showToast = useAppStore((s) => s.showToast)
+  const open = useTerminalStore((s) => s.open)
   const [editing, setEditing] = useState<TerminalDef | null>(null)
 
   const save = (t: TerminalDef): void => {
@@ -17,8 +20,12 @@ export function TerminalDefsPanel({ project }: { project: Project }) {
     void updateProject({ id: project.id, terminals })
     setEditing(null)
   }
-  const remove = (id: string): void => {
-    void updateProject({ id: project.id, terminals: project.terminals.filter((x) => x.id !== id) })
+  const remove = (t: TerminalDef): void => {
+    if (t.credentialRef) void window.api.creds.remove(t.credentialRef)
+    void updateProject({ id: project.id, terminals: project.terminals.filter((x) => x.id !== t.id) })
+  }
+  const connect = (t: TerminalDef): void => {
+    open(project.id, { def: t, project }).catch((e) => showToast(String(e)))
   }
 
   return (
@@ -35,7 +42,14 @@ export function TerminalDefsPanel({ project }: { project: Project }) {
         </button>
       </div>
 
-      {editing && <TerminalEditor def={editing} onSave={save} onCancel={() => setEditing(null)} />}
+      {editing && (
+        <TerminalEditor
+          key={editing.id}
+          def={editing}
+          onSave={save}
+          onCancel={() => setEditing(null)}
+        />
+      )}
 
       {project.terminals.length === 0 && !editing && (
         <p className="py-6 text-center text-xs text-muted">
@@ -49,21 +63,34 @@ export function TerminalDefsPanel({ project }: { project: Project }) {
             <div className="flex items-center gap-2">
               <button
                 className="btn-icon h-6 w-6 text-accent"
-                title="Bağlan (Asama 4)"
-                onClick={() => showToast('SSH oturumu 4. aşamada geliyor.')}
+                title={t.kind === 'ssh' ? 'Bağlan' : 'Aç'}
+                onClick={() => connect(t)}
               >
-                <Server size={12} />
+                <Play size={12} />
               </button>
+              {t.kind === 'ssh' ? (
+                <Server size={12} className="shrink-0 text-muted" />
+              ) : (
+                <Terminal size={12} className="shrink-0 text-muted" />
+              )}
               <span className="truncate text-sm">{t.name || '(adsız)'}</span>
-              <span className="ml-auto rounded bg-bg px-1.5 py-0.5 text-[10px] uppercase text-muted">
-                {t.kind}
-              </span>
-              <button className="btn-icon h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => setEditing(t)}>
+              {t.script && t.script.length > 0 && (
+                <span
+                  className="rounded bg-bg px-1 py-0.5 text-[10px] text-muted"
+                  title={`${t.script.length} senaryo adımı`}
+                >
+                  {t.script.length} adım
+                </span>
+              )}
+              <button
+                className="btn-icon ml-auto h-6 w-6 opacity-0 group-hover:opacity-100"
+                onClick={() => setEditing(t)}
+              >
                 <Pencil size={12} />
               </button>
               <button
                 className="btn-icon h-6 w-6 opacity-0 group-hover:opacity-100 hover:text-red-300"
-                onClick={() => remove(t.id)}
+                onClick={() => remove(t)}
               >
                 <Trash2 size={12} />
               </button>
@@ -71,7 +98,9 @@ export function TerminalDefsPanel({ project }: { project: Project }) {
             {t.kind === 'ssh' && (
               <div className="mt-1 flex items-center gap-1 pl-8 font-mono text-[11px] text-muted">
                 {t.username}@{t.host}:{t.port}
-                {t.credentialRef && <KeyRound size={10} className="ml-1 text-emerald-400" />}
+                {t.credentialRef && (
+                  <KeyRound size={10} className="ml-1 text-emerald-400" aria-label="şifre kayıtlı" />
+                )}
               </div>
             )}
           </li>
@@ -91,7 +120,36 @@ function TerminalEditor({
   onCancel: () => void
 }) {
   const [d, setD] = useState(def)
+  const [password, setPassword] = useState('')
+  const [hasSecret, setHasSecret] = useState(false)
+  const [scriptText, setScriptText] = useState(stringifyScript(def.script))
+  const [saving, setSaving] = useState(false)
+  const credRef = def.credentialRef ?? `term:${def.id}`
+
+  useEffect(() => {
+    void window.api.creds.has(credRef).then(setHasSecret)
+  }, [credRef])
+
   const valid = d.name.trim() && (d.kind === 'local' || (d.host && d.username))
+
+  const submit = async (): Promise<void> => {
+    setSaving(true)
+    try {
+      let credentialRef = d.credentialRef
+      if (d.kind === 'ssh' && password) {
+        await window.api.creds.set(credRef, password)
+        credentialRef = credRef
+      }
+      if (d.kind === 'ssh' && !password && hasSecret) credentialRef = credRef
+      onSave({ ...d, credentialRef, script: parseScript(scriptText) })
+    } catch (e) {
+      console.error('oturum kaydedilemedi', e)
+      alert('Kaydedilemedi: ' + String((e as Error).message ?? e))
+    } finally {
+      setSaving(false)
+    }
+  }
+
   return (
     <div className="mb-3 rounded-md border border-accent/40 bg-panel-2 p-2.5">
       <div className="mb-2 flex items-center justify-between">
@@ -146,16 +204,45 @@ function TerminalEditor({
             onChange={(e) => setD({ ...d, username: e.target.value.trim() })}
             placeholder="root"
           />
+          <label className="label">
+            Şifre {hasSecret && <span className="normal-case text-emerald-400">· kasada kayıtlı</span>}
+          </label>
+          <input
+            className="input mb-1 font-mono"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder={hasSecret ? 'değiştirmek için yaz' : 'bağlantı şifresi'}
+            autoComplete="off"
+          />
           <p className="mb-2 text-[11px] text-muted">
-            Şifre 4. aşamada şifreli kasaya kaydedilecek, JSON'a yazılmayacak.
+            Windows DPAPI ile şifrelenir, proje dosyasına yazılmaz. Senaryoda{' '}
+            <code className="font-mono">{'{{secret:' + credRef + '}}'}</code> ile kullanılabilir.
           </p>
         </>
       )}
+      <label className="label">Bağlantı sonrası senaryo (opsiyonel)</label>
+      <textarea
+        className="input mb-1 h-24 resize-y font-mono text-xs"
+        value={scriptText}
+        onChange={(e) => setScriptText(e.target.value)}
+        placeholder={'expect: \\$ @10000\nsend: cd /opt/test\nsend: ./run.sh {{ip}}'}
+        spellCheck={false}
+      />
+      <p className="mb-2 text-[11px] text-muted">
+        Satır başına bir adım: <code className="font-mono">send:</code>,{' '}
+        <code className="font-mono">expect:</code> (regex, sonuna <code className="font-mono">@ms</code>),{' '}
+        <code className="font-mono">wait:</code>. Değişkenler: {'{{ip}}'}, {'{{gateway}}'}, {'{{project}}'}.
+      </p>
       <div className="flex justify-end gap-1">
         <button className="btn" onClick={onCancel}>
           Vazgeç
         </button>
-        <button className="btn btn-primary" disabled={!valid} onClick={() => onSave(d)}>
+        <button
+          className="btn btn-primary"
+          disabled={!valid || saving}
+          onClick={() => void submit()}
+        >
           Kaydet
         </button>
       </div>

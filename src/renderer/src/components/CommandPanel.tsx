@@ -18,11 +18,9 @@ export function CommandPanel({ project }: { project: Project }) {
   const [editing, setEditing] = useState<CommandDef | null>(null)
 
   const execute = (c: CommandDef): void => {
-    if (c.shell === 'ssh') {
-      showToast('SSH komutları 4. aşamada geliyor.')
-      return
-    }
-    void run(project, expandVariables(c.text, project), { newTab: c.runInNewTab, shell: c.shell })
+    run(project, expandVariables(c.text, project), { newTab: c.runInNewTab, shell: c.shell }).catch(
+      (e) => showToast(String((e as Error).message ?? e))
+    )
   }
 
   const save = (cmd: CommandDef): void => {

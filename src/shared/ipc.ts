@@ -1,4 +1,4 @@
-import type { Project, AdapterInfo, NetworkProfile } from './types'
+import type { Project, AdapterInfo, NetworkProfile, ScriptStep } from './types'
 
 export interface NetApplyResult {
   ok: boolean
@@ -26,10 +26,16 @@ export interface NetAutoEvent {
 
 export interface TermCreateOptions {
   id: string
+  kind: 'local' | 'ssh'
   shell: 'powershell' | 'cmd'
   cwd?: string
   cols?: number
   rows?: number
+  ssh?: { host: string; port?: number; username: string; credentialRef?: string }
+  /** Baglanti sonrasi otomasyon adimlari */
+  script?: ScriptStep[]
+  /** {{ip}} gibi degiskenler icin proje degerleri */
+  vars?: Record<string, string>
 }
 
 export interface TermExitInfo {
@@ -62,6 +68,12 @@ export interface TerminoApi {
     onData(cb: (id: string, data: string) => void): () => void
     onExit(cb: (info: TermExitInfo) => void): () => void
   }
+  creds: {
+    set(ref: string, secret: string): Promise<void>
+    has(ref: string): Promise<boolean>
+    remove(ref: string): Promise<void>
+    available(): Promise<boolean>
+  }
   app: {
     version(): Promise<string>
     dataDir(): Promise<string>
@@ -86,6 +98,10 @@ export const IPC = {
   termKill: 'term:kill',
   termData: 'term:data',
   termExit: 'term:exit',
+  credSet: 'cred:set',
+  credHas: 'cred:has',
+  credRemove: 'cred:remove',
+  credAvailable: 'cred:available',
   appVersion: 'app:version',
   appDataDir: 'app:dataDir',
   appOpenDataDir: 'app:openDataDir'

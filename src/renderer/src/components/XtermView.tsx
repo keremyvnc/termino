@@ -69,7 +69,7 @@ export function XtermView({ tab, visible }: { tab: TermTab; visible: boolean }) 
     })
 
     void window.api.term
-      .create({ id: tab.id, shell: tab.shell, cols: term.cols, rows: term.rows })
+      .create({ ...tab.createOpts, id: tab.id, cols: term.cols, rows: term.rows })
       .then(() => {
         created = true
         markRunning(tab.id)

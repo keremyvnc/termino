@@ -6,6 +6,7 @@ import type { Project } from '@shared/types'
 import { ProjectStore } from './projectStore'
 import { listAdapters, watchAdapters } from './network'
 import { TerminalManager } from './terminals'
+import { CredentialVault } from './credentials'
 import { applyProfile, getBackup, restoreBackup, setDhcp } from './netApply'
 import { AutoApplier } from './autoApply'
 import type { NetworkProfile } from '@shared/types'
@@ -23,7 +24,8 @@ export function log(...parts: unknown[]): void {
 }
 let mainWindow: BrowserWindow | null = null
 let stopWatch: (() => void) | null = null
-const terminals = new TerminalManager(() => mainWindow?.webContents ?? null)
+const vault = new CredentialVault()
+const terminals = new TerminalManager(() => mainWindow?.webContents ?? null, vault)
 const autoApplier = new AutoApplier(store, (ev) => mainWindow?.webContents.send(IPC.netAutoApplied, ev))
 
 function createWindow(): void {
@@ -48,7 +50,7 @@ function createWindow(): void {
   mainWindow.webContents.on('did-finish-load', () => log('renderer did-finish-load'))
   mainWindow.webContents.on('render-process-gone', (_e, d) => log('render-process-gone', d))
   mainWindow.webContents.on('console-message', (ev) => {
-    if (ev.level === 'error') log('renderer error:', ev.message, ev.sourceId, ev.lineNumber)
+    if (ev.level === 'error' || ev.level === 'warning') log('renderer', ev.level, ev.message, ev.sourceId, ev.lineNumber)
   })
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     void shell.openExternal(url)
@@ -75,7 +77,7 @@ function createWindow(): void {
 
 function registerIpc(): void {
   ipcMain.handle(IPC.projectsList, () => store.list())
-  ipcMain.handle(IPC.projectsSave, (_e, p: Project) => store.save(p))
+  ipcMain.handle(IPC.projectsSave, (_e, p: Project) => store.save(p).then((r) => { log('projects:save', r.id, r.terminals.length, 'oturum'); return r }))
   ipcMain.handle(IPC.projectsRemove, (_e, id: string) => store.remove(id))
   ipcMain.handle(IPC.netListAdapters, () => listAdapters())
   const logged = async <T>(name: string, fn: () => Promise<T>): Promise<T> => {
@@ -99,6 +101,10 @@ function registerIpc(): void {
     terminals.resize(id, cols, rows)
   )
   ipcMain.on(IPC.termKill, (_e, id: string) => terminals.kill(id))
+  ipcMain.handle(IPC.credSet, (_e, ref: string, secret: string) => logged('cred:set', () => vault.set(ref, secret).then(() => ref)))
+  ipcMain.handle(IPC.credHas, (_e, ref: string) => vault.has(ref))
+  ipcMain.handle(IPC.credRemove, (_e, ref: string) => vault.remove(ref))
+  ipcMain.handle(IPC.credAvailable, () => vault.available())
   ipcMain.handle(IPC.appVersion, () => app.getVersion())
   ipcMain.handle(IPC.appDataDir, () => store.directory)
   ipcMain.handle(IPC.appOpenDataDir, () => shell.openPath(store.directory).then(() => undefined))
