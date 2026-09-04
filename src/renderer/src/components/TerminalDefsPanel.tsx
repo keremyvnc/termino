@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { KeyRound, Pencil, Play, Plus, Server, Terminal, Trash2, Wand2, X } from 'lucide-react'
+import { ExternalLink, Globe, KeyRound, Pencil, Play, Plus, Server, Terminal, Trash2, Wand2, X } from 'lucide-react'
 import type { Project, TerminalDef, TerminalKind } from '@shared/types'
 import { newId } from '@shared/types'
 import { parseScript, stringifyScript } from '@shared/script'
@@ -73,13 +73,15 @@ export function TerminalDefsPanel({ project }: { project: Project }) {
             <div className="flex items-center gap-2">
               <button
                 className="btn-icon h-6 w-6 text-accent"
-                title={t.kind === 'ssh' ? 'Bağlan' : 'Aç'}
+                title={t.kind === 'ssh' ? 'Bağlan' : t.kind === 'web' ? 'Tarayıcıda aç' : 'Aç'}
                 onClick={() => connect(t)}
               >
-                <Play size={12} />
+                {t.kind === 'web' ? <ExternalLink size={12} /> : <Play size={12} />}
               </button>
               {t.kind === 'ssh' ? (
                 <Server size={12} className="shrink-0 text-muted" />
+              ) : t.kind === 'web' ? (
+                <Globe size={12} className="shrink-0 text-muted" />
               ) : (
                 <Terminal size={12} className="shrink-0 text-muted" />
               )}
@@ -105,6 +107,9 @@ export function TerminalDefsPanel({ project }: { project: Project }) {
                 <Trash2 size={12} />
               </button>
             </div>
+            {t.kind === 'web' && (
+              <div className="mt-1 truncate pl-8 font-mono text-[11px] text-muted">{t.url}</div>
+            )}
             {t.kind === 'ssh' && (
               <div className="mt-1 flex items-center gap-1 pl-8 font-mono text-[11px] text-muted">
                 {t.username}@{t.host}:{t.port}
@@ -154,7 +159,9 @@ function TerminalEditor({
     void window.api.creds.has(credRef).then(setHasSecret)
   }, [credRef])
 
-  const valid = d.name.trim() && (d.kind === 'local' || (d.host && d.username))
+  const valid =
+    d.name.trim() &&
+    (d.kind === 'local' || (d.kind === 'web' && d.url?.trim()) || (d.kind === 'ssh' && d.host && d.username))
 
   const secretKey = (name: string): string => `term:${def.id}:${name}`
 
@@ -224,7 +231,23 @@ function TerminalEditor({
       >
         <option value="ssh">SSH</option>
         <option value="local">Yerel PowerShell</option>
+        <option value="web">Web adresi (tarayıcıda aç)</option>
       </select>
+      {d.kind === 'web' && (
+        <>
+          <label className="label">Adres</label>
+          <input
+            className="input mb-1 font-mono"
+            value={d.url ?? ''}
+            onChange={(e) => setD({ ...d, url: e.target.value.trim() })}
+            placeholder="http://10.1.1.1 veya https://cihaz.local/admin"
+          />
+          <p className="mb-2 text-[11px] text-muted">
+            Oynat butonu bu adresi varsayılan tarayıcında (Chrome vb.) açar. Şema yazılmazsa
+            http varsayılır.
+          </p>
+        </>
+      )}
       {d.kind === 'ssh' && (
         <>
           <div className="grid grid-cols-[1fr_72px] gap-2">
@@ -269,6 +292,8 @@ function TerminalEditor({
         </>
       )}
 
+      {d.kind !== 'web' && (
+      <>
       <div className="mb-1 flex items-center justify-between">
         <label className="label mb-0">Ek şifreler (senaryo için)</label>
         <button
@@ -340,6 +365,8 @@ function TerminalEditor({
         <code className="font-mono">wait:</code>, <code className="font-mono">#</code> yorum.
         Değişkenler: {'{{ip}}'}, {'{{gateway}}'}, {'{{project}}'}.
       </p>
+      </>
+      )}
       <div className="flex justify-end gap-1">
         <button className="btn" onClick={onCancel}>
           Vazgeç

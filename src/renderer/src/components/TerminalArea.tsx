@@ -1,4 +1,4 @@
-import { ChevronDown, Plus, Server, Terminal as TerminalIcon, X } from 'lucide-react'
+import { ChevronDown, Globe, Plus, Server, Terminal as TerminalIcon, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import type { Project } from '@shared/types'
 import { useTerminalStore } from '../store/useTerminalStore'
@@ -132,6 +132,8 @@ export function TerminalArea({ project }: { project: Project }) {
                 >
                   {d.kind === 'ssh' ? (
                     <Server size={12} className="text-accent" />
+                  ) : d.kind === 'web' ? (
+                    <Globe size={12} className="text-accent" />
                   ) : (
                     <TerminalIcon size={12} className="text-muted" />
                   )}

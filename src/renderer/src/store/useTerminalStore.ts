@@ -122,6 +122,10 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
   activeByProject: {},
 
   async open(projectId, opts = {}) {
+    if (opts.def?.kind === 'web') {
+      await window.api.app.openExternal(opts.def.url ?? '')
+      return ''
+    }
     const count = get().tabs.filter((t) => t.projectId === projectId).length + 1
     const tab = buildTab(projectId, opts, count)
     set((s) => ({

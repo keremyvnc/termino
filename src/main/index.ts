@@ -163,6 +163,11 @@ function registerIpc(): void {
     }
     return imported
   })
+  ipcMain.handle(IPC.appOpenExternal, async (_e, url: string) => {
+    const u = /^[a-z]+:\/\//i.test(url) ? url : `http://${url}`
+    if (!/^https?:\/\//i.test(u)) throw new Error('Yalnızca http/https adresleri açılabilir')
+    await shell.openExternal(u)
+  })
   ipcMain.handle(IPC.appOpenDataDir, () => shell.openPath(store.directory).then(() => undefined))
 }
 

@@ -60,7 +60,8 @@ class LocalPtySession implements TerminalSession {
   ) {
     const shell =
       opts.shell === 'cmd' ? 'cmd.exe' : (process.env['TERMINO_PWSH'] ?? 'powershell.exe')
-    const args = opts.shell === 'cmd' ? [] : ['-NoLogo']
+    // Profil ciktisi (ornek: profildeki basibos ifadeler) ekrana gelmesin: profil yuklenir, ekran temizlenir.
+    const args = opts.shell === 'cmd' ? [] : ['-NoLogo', '-NoExit', '-Command', 'Clear-Host']
     this.proc = pty.spawn(shell, args, {
       name: 'xterm-256color',
       cols: opts.cols ?? 120,

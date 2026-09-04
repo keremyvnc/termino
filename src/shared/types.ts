@@ -1,7 +1,7 @@
 // Paylasilan veri modeli: hem main hem renderer bunu kullanir.
 
 export type ShellKind = 'powershell' | 'cmd' | 'ssh'
-export type TerminalKind = 'local' | 'ssh'
+export type TerminalKind = 'local' | 'ssh' | 'web'
 
 export interface CommandDef {
   id: string
@@ -30,6 +30,8 @@ export interface TerminalDef {
   host?: string
   port?: number
   username?: string
+  /** kind=web: tarayicida acilacak adres */
+  url?: string
   /** Sifre kasasindaki anahtar; sifrenin kendisi JSON'a yazilmaz */
   credentialRef?: string
   /** Senaryoda {{secret:ad}} ile kullanilan ek sifrelerin adlari (degerler kasada) */

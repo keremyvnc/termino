@@ -89,6 +89,8 @@ export interface TerminoApi {
     version(): Promise<string>
     dataDir(): Promise<string>
     openDataDir(): Promise<void>
+    /** http/https adresi varsayilan tarayicida acar */
+    openExternal(url: string): Promise<void>
     /** Projeyi JSON olarak disa aktarir (sifre referanslari cikarilir). Iptalde false. */
     exportProject(project: Project): Promise<boolean>
     /** Dosya secip projeyi okur; yeni id'lerle doner. Iptalde null. */
@@ -121,6 +123,7 @@ export const IPC = {
   appVersion: 'app:version',
   appDataDir: 'app:dataDir',
   appOpenDataDir: 'app:openDataDir',
+  appOpenExternal: 'app:openExternal',
   appExportProject: 'app:exportProject',
   appImportProject: 'app:importProject'
 } as const

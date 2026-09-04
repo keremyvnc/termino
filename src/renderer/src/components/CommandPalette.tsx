@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Play, Server, Terminal, Zap } from 'lucide-react'
+import { Globe, Play, Server, Terminal, Zap } from 'lucide-react'
 import type { Project } from '@shared/types'
 import { useAppStore } from '../store/useAppStore'
 import { expandVariables, useTerminalStore } from '../store/useTerminalStore'
@@ -36,10 +36,17 @@ export function CommandPalette({ project, onClose }: { project: Project; onClose
       id: 't:' + t.id,
       group: 'oturum',
       label: t.name,
-      hint: t.kind === 'ssh' ? `${t.username}@${t.host}:${t.port}` : 'yerel PowerShell',
+      hint:
+        t.kind === 'ssh'
+          ? `${t.username}@${t.host}:${t.port}`
+          : t.kind === 'web'
+            ? (t.url ?? '')
+            : 'yerel PowerShell',
       icon:
         t.kind === 'ssh' ? (
           <Server size={13} className="text-accent" />
+        ) : t.kind === 'web' ? (
+          <Globe size={13} className="text-accent" />
         ) : (
           <Terminal size={13} className="text-muted" />
         ),
