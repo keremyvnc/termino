@@ -3,6 +3,7 @@ import { Pencil, Play, Plus, Trash2, X } from 'lucide-react'
 import type { CommandDef, Project, ShellKind } from '@shared/types'
 import { newId } from '@shared/types'
 import { useAppStore } from '../store/useAppStore'
+import { expandVariables, useTerminalStore } from '../store/useTerminalStore'
 
 const SHELLS: { id: ShellKind; label: string }[] = [
   { id: 'powershell', label: 'PowerShell' },
@@ -13,7 +14,16 @@ const SHELLS: { id: ShellKind; label: string }[] = [
 export function CommandPanel({ project }: { project: Project }) {
   const updateProject = useAppStore((s) => s.updateProject)
   const showToast = useAppStore((s) => s.showToast)
+  const run = useTerminalStore((s) => s.run)
   const [editing, setEditing] = useState<CommandDef | null>(null)
+
+  const execute = (c: CommandDef): void => {
+    if (c.shell === 'ssh') {
+      showToast('SSH komutları 4. aşamada geliyor.')
+      return
+    }
+    void run(project, expandVariables(c.text, project), { newTab: c.runInNewTab, shell: c.shell })
+  }
 
   const save = (cmd: CommandDef): void => {
     const exists = project.commands.some((c) => c.id === cmd.id)
@@ -60,8 +70,8 @@ export function CommandPanel({ project }: { project: Project }) {
             <div className="flex items-center gap-2">
               <button
                 className="btn-icon h-6 w-6 text-accent"
-                title="Çalıştır (Asama 2)"
-                onClick={() => showToast('Terminal 2. aşamada geliyor: ' + c.text)}
+                title={c.runInNewTab ? 'Yeni sekmede çalıştır' : 'Aktif terminalde çalıştır'}
+                onClick={() => execute(c)}
               >
                 <Play size={12} />
               </button>
@@ -82,7 +92,12 @@ export function CommandPanel({ project }: { project: Project }) {
                 <Trash2 size={12} />
               </button>
             </div>
-            <pre className="mt-1 truncate pl-8 font-mono text-[11px] text-muted">{c.text}</pre>
+            <pre
+              className="mt-1 truncate pl-8 font-mono text-[11px] text-muted"
+              title={expandVariables(c.text, project)}
+            >
+              {c.text}
+            </pre>
           </li>
         ))}
       </ul>

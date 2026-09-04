@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import { IPC, type TerminoApi } from '@shared/ipc'
+import { IPC, type TerminoApi, type TermCreateOptions, type TermExitInfo } from '@shared/ipc'
 import type { AdapterInfo, Project } from '@shared/types'
 
 const api: TerminoApi = {
@@ -14,6 +14,22 @@ const api: TerminoApi = {
       const handler = (_: unknown, adapters: AdapterInfo[]): void => cb(adapters)
       ipcRenderer.on(IPC.netAdaptersChanged, handler)
       return () => ipcRenderer.removeListener(IPC.netAdaptersChanged, handler)
+    }
+  },
+  term: {
+    create: (opts: TermCreateOptions) => ipcRenderer.invoke(IPC.termCreate, opts),
+    write: (id, data) => ipcRenderer.send(IPC.termWrite, id, data),
+    resize: (id, cols, rows) => ipcRenderer.send(IPC.termResize, id, cols, rows),
+    kill: (id) => ipcRenderer.send(IPC.termKill, id),
+    onData: (cb) => {
+      const handler = (_: unknown, p: { id: string; data: string }): void => cb(p.id, p.data)
+      ipcRenderer.on(IPC.termData, handler)
+      return () => ipcRenderer.removeListener(IPC.termData, handler)
+    },
+    onExit: (cb) => {
+      const handler = (_: unknown, info: TermExitInfo): void => cb(info)
+      ipcRenderer.on(IPC.termExit, handler)
+      return () => ipcRenderer.removeListener(IPC.termExit, handler)
     }
   },
   app: {

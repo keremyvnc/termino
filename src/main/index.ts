@@ -4,10 +4,13 @@ import { IPC } from '@shared/ipc'
 import type { Project } from '@shared/types'
 import { ProjectStore } from './projectStore'
 import { listAdapters, watchAdapters } from './network'
+import { TerminalManager } from './terminals'
+import type { TermCreateOptions } from '@shared/ipc'
 
 const store = new ProjectStore()
 let mainWindow: BrowserWindow | null = null
 let stopWatch: (() => void) | null = null
+const terminals = new TerminalManager(() => mainWindow?.webContents ?? null)
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -43,6 +46,7 @@ function createWindow(): void {
     mainWindow?.webContents.send(IPC.netAdaptersChanged, adapters)
   })
   mainWindow.on('closed', () => {
+    terminals.killAll()
     stopWatch?.()
     stopWatch = null
     mainWindow = null
@@ -54,6 +58,12 @@ function registerIpc(): void {
   ipcMain.handle(IPC.projectsSave, (_e, p: Project) => store.save(p))
   ipcMain.handle(IPC.projectsRemove, (_e, id: string) => store.remove(id))
   ipcMain.handle(IPC.netListAdapters, () => listAdapters())
+  ipcMain.handle(IPC.termCreate, (_e, opts: TermCreateOptions) => terminals.create(opts))
+  ipcMain.on(IPC.termWrite, (_e, id: string, data: string) => terminals.write(id, data))
+  ipcMain.on(IPC.termResize, (_e, id: string, cols: number, rows: number) =>
+    terminals.resize(id, cols, rows)
+  )
+  ipcMain.on(IPC.termKill, (_e, id: string) => terminals.kill(id))
   ipcMain.handle(IPC.appVersion, () => app.getVersion())
   ipcMain.handle(IPC.appDataDir, () => store.directory)
   ipcMain.handle(IPC.appOpenDataDir, () => shell.openPath(store.directory).then(() => undefined))
@@ -66,6 +76,8 @@ app.whenReady().then(() => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
 })
+
+app.on('before-quit', () => terminals.killAll())
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()

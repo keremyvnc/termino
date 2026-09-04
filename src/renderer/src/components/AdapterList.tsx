@@ -16,7 +16,7 @@ export function AdapterList() {
     projects.find((p) => p.network.adapterMac === mac)?.name
 
   return (
-    <div className="max-h-64 border-t border-border">
+    <div className="flex max-h-64 shrink-0 flex-col border-t border-border">
       <div className="section-title">
         <span className="flex items-center gap-1.5">
           <Cable size={12} /> Adaptörler
@@ -25,7 +25,7 @@ export function AdapterList() {
           <RefreshCw size={12} />
         </button>
       </div>
-      <ul className="overflow-y-auto px-2 pb-2">
+      <ul className="min-h-0 flex-1 overflow-y-auto px-2 pb-2">
         {adapters.map((a) => (
           <li
             key={a.mac || a.name}

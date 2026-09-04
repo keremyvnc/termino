@@ -2,13 +2,10 @@ import { Unplug, Zap } from 'lucide-react'
 import type { NetworkProfile, Project } from '@shared/types'
 import { useAppStore } from '../store/useAppStore'
 import { statusColor } from './AdapterList'
+import { prefixToMask } from '../store/useTerminalStore'
 
 const IP_RE = /^(25[0-5]|2[0-4]\d|1?\d?\d)(\.(25[0-5]|2[0-4]\d|1?\d?\d)){3}$/
 
-export function prefixToMask(prefix: number): string {
-  const bits = prefix <= 0 ? 0 : (0xffffffff << (32 - prefix)) >>> 0
-  return [24, 16, 8, 0].map((s) => (bits >>> s) & 255).join('.')
-}
 
 export function NetworkPanel({ project }: { project: Project }) {
   const adapters = useAppStore((s) => s.adapters)

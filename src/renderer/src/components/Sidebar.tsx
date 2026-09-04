@@ -16,7 +16,7 @@ export function Sidebar() {
           <Plus size={14} />
         </button>
       </div>
-      <ul className="flex-1 overflow-y-auto px-2">
+      <ul className="min-h-0 flex-1 overflow-y-auto px-2">
         {projects.length === 0 && (
           <li className="px-2 py-6 text-center text-xs text-muted">Henüz proje yok</li>
         )}
@@ -42,7 +42,7 @@ export function Sidebar() {
         })}
       </ul>
       <AdapterList />
-      <footer className="flex items-center justify-between border-t border-border px-3 py-2 text-[11px] text-muted">
+      <footer className="flex shrink-0 items-center justify-between border-t border-border px-3 py-2 text-[11px] text-muted">
         <span>v0.1.0</span>
         <button
           className="flex items-center gap-1 hover:text-fg"
