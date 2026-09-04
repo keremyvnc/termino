@@ -1,4 +1,4 @@
-import { FolderOpen, Plus } from 'lucide-react'
+import { FolderOpen, Import, Plus } from 'lucide-react'
 import { useAppStore } from '../store/useAppStore'
 import { AdapterList } from './AdapterList'
 
@@ -7,14 +7,20 @@ export function Sidebar() {
   const selectedId = useAppStore((s) => s.selectedId)
   const select = useAppStore((s) => s.select)
   const createProject = useAppStore((s) => s.createProject)
+  const importProject = useAppStore((s) => s.importProject)
 
   return (
     <aside className="flex w-64 shrink-0 flex-col border-r border-border bg-panel">
       <div className="section-title">
         <span>Projeler</span>
-        <button className="btn-icon" title="Yeni proje" onClick={() => void createProject()}>
-          <Plus size={14} />
-        </button>
+        <span className="flex items-center">
+          <button className="btn-icon" title="Proje içe aktar" onClick={() => void importProject()}>
+            <Import size={13} />
+          </button>
+          <button className="btn-icon" title="Yeni proje" onClick={() => void createProject()}>
+            <Plus size={14} />
+          </button>
+        </span>
       </div>
       <ul className="min-h-0 flex-1 overflow-y-auto px-2">
         {projects.length === 0 && (

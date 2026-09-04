@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Trash2 } from 'lucide-react'
+import { Download, Trash2 } from 'lucide-react'
 import type { Project } from '@shared/types'
 import { PROJECT_COLORS } from '@shared/types'
 import { useAppStore } from '../store/useAppStore'
@@ -7,6 +7,7 @@ import { useAppStore } from '../store/useAppStore'
 export function ProjectHeader({ project }: { project: Project }) {
   const updateProject = useAppStore((s) => s.updateProject)
   const removeProject = useAppStore((s) => s.removeProject)
+  const showToast = useAppStore((s) => s.showToast)
   const [confirm, setConfirm] = useState(false)
 
   return (
@@ -39,6 +40,15 @@ export function ProjectHeader({ project }: { project: Project }) {
         onChange={(e) => void updateProject({ id: project.id, description: e.target.value })}
         placeholder="Açıklama…"
       />
+      <button
+        className="btn-icon"
+        title="Projeyi dışa aktar (şifreler dahil edilmez)"
+        onClick={() =>
+          void window.api.app.exportProject(project).then((ok) => ok && showToast('Proje dışa aktarıldı.'))
+        }
+      >
+        <Download size={14} />
+      </button>
       {confirm ? (
         <div className="flex items-center gap-1">
           <button

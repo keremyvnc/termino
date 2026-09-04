@@ -78,6 +78,10 @@ export interface TerminoApi {
     version(): Promise<string>
     dataDir(): Promise<string>
     openDataDir(): Promise<void>
+    /** Projeyi JSON olarak disa aktarir (sifre referanslari cikarilir). Iptalde false. */
+    exportProject(project: Project): Promise<boolean>
+    /** Dosya secip projeyi okur; yeni id'lerle doner. Iptalde null. */
+    importProject(): Promise<Project | null>
   }
 }
 
@@ -104,5 +108,7 @@ export const IPC = {
   credAvailable: 'cred:available',
   appVersion: 'app:version',
   appDataDir: 'app:dataDir',
-  appOpenDataDir: 'app:openDataDir'
+  appOpenDataDir: 'app:openDataDir',
+  appExportProject: 'app:exportProject',
+  appImportProject: 'app:importProject'
 } as const

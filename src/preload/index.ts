@@ -50,7 +50,9 @@ const api: TerminoApi = {
   app: {
     version: () => ipcRenderer.invoke(IPC.appVersion),
     dataDir: () => ipcRenderer.invoke(IPC.appDataDir),
-    openDataDir: () => ipcRenderer.invoke(IPC.appOpenDataDir)
+    openDataDir: () => ipcRenderer.invoke(IPC.appOpenDataDir),
+    exportProject: (p: Project) => ipcRenderer.invoke(IPC.appExportProject, p),
+    importProject: () => ipcRenderer.invoke(IPC.appImportProject)
   }
 }
 

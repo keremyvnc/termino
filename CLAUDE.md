@@ -43,6 +43,17 @@ env -u ELECTRON_RUN_AS_NODE npx electron .
 - `src/main/scriptRunner.ts` + `src/shared/script.ts`: satir tabanli senaryo (`send:`, `expect: regex @ms`, `wait: ms`, `#` yorum). `{{ip}}` gibi degiskenler proje profilinden, `{{secret:ref}}` kasadan (sadece main) doldurulur. Yerel ve SSH oturumlarinda calisir.
 - Test: `ssh2.Server` ile sahte sunucu yazip 127.0.0.1:2222'de calistirmak yeterli; sisteme sshd kurmaya gerek yok.
 
+## Kisayollar ve cila (Asama 5)
+
+- Ctrl+K komut paleti (`CommandPalette.tsx`): komutlar, oturum tanimlari, hizli eylemler.
+- Ctrl+F terminalde arama (`TerminalSearch.tsx`, @xterm/addon-search). Ctrl+Shift+C/V kopyala-yapistir.
+- Ctrl+Shift+T yeni sekme, Ctrl+Shift+W kapat, Alt+1..9 sekme sec. Uygulama kisayollari xterm'in
+  `attachCustomKeyEventHandler` icinde `false` dondurulerek pencereye kabartilir.
+- Disa aktarma (proje basligi, indirme ikonu): JSON, `credentialRef` cikarilir. Ice aktarma (sol panel):
+  yeni id'ler, adaptor ve autoApply sifirlanir.
+- Kurulum: `npm run dist` -> `release/Termino-Setup-<surum>.exe` (NSIS, kullanici bazli, dizin secilebilir).
+  Ikon `resources/icon.ico` (PIL ile uretildi). `node-pty` asar disinda birakilir.
+
 ## Kurallar
 
 - Sifreler asla proje JSON'una yazilmaz; `credentialRef` ile safeStorage kasasina isaret edilir.
@@ -57,4 +68,4 @@ env -u ELECTRON_RUN_AS_NODE npx electron .
 2. xterm.js + node-pty ile yerel terminal sekmeleri, komut calistirma, `{{ip}}` degiskenleri (tamamlandi)
 3. Canli adaptor izleme, UAC ile IP/subnet atama, DHCP'ye donus, otomatik uygulama (tamamlandi)
 4. SSH (ssh2), sifre kasasi, senaryo motoru (send/expect/wait), provider arayuzu (tamamlandi)
-5. Cila: kisayollar, dis/ic aktarma, kurulum paketi
+5. Cila: kisayollar, dis/ic aktarma, kurulum paketi (tamamlandi)

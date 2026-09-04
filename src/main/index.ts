@@ -1,6 +1,8 @@
-import { app, BrowserWindow, ipcMain, shell } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
 import { join } from 'path'
-import { appendFileSync } from 'fs'
+import { appendFileSync, promises as fsp } from 'fs'
+import { randomUUID } from 'crypto'
+import { newProject } from '@shared/types'
 import { IPC } from '@shared/ipc'
 import type { Project } from '@shared/types'
 import { ProjectStore } from './projectStore'
@@ -107,6 +109,59 @@ function registerIpc(): void {
   ipcMain.handle(IPC.credAvailable, () => vault.available())
   ipcMain.handle(IPC.appVersion, () => app.getVersion())
   ipcMain.handle(IPC.appDataDir, () => store.directory)
+  ipcMain.handle(IPC.appExportProject, async (_e, p: Project) => {
+    if (!mainWindow) return false
+    const safe = p.name.replace(/[^\w\-]+/g, '_') || 'proje'
+    const r = await dialog.showSaveDialog(mainWindow, {
+      title: 'Projeyi dışa aktar',
+      defaultPath: `${safe}.termino.json`,
+      filters: [{ name: 'Termino projesi', extensions: ['json'] }]
+    })
+    if (r.canceled || !r.filePath) return false
+    const out: Project = {
+      ...p,
+      terminals: p.terminals.map((t) => ({ ...t, credentialRef: undefined }))
+    }
+    await fsp.writeFile(r.filePath, JSON.stringify(out, null, 2), 'utf8')
+    return true
+  })
+  ipcMain.handle(IPC.appImportProject, async () => {
+    if (!mainWindow) return null
+    const r = await dialog.showOpenDialog(mainWindow, {
+      title: 'Proje içe aktar',
+      filters: [{ name: 'Termino projesi', extensions: ['json'] }],
+      properties: ['openFile']
+    })
+    if (r.canceled || !r.filePaths[0]) return null
+    const raw = JSON.parse(await fsp.readFile(r.filePaths[0], 'utf8'))
+    if (!raw || typeof raw.name !== 'string') throw new Error('Geçersiz proje dosyası')
+    const base = newProject()
+    const shells = ['powershell', 'cmd', 'ssh']
+    const imported: Project = {
+      ...base,
+      name: raw.name,
+      description: String(raw.description ?? ''),
+      color: typeof raw.color === 'string' ? raw.color : base.color,
+      commands: Array.isArray(raw.commands)
+        ? raw.commands.map((c: Record<string, unknown>) => ({
+            id: randomUUID(),
+            name: String(c.name ?? ''),
+            shell: (shells.includes(String(c.shell)) ? String(c.shell) : 'powershell') as Project['commands'][number]['shell'],
+            text: String(c.text ?? ''),
+            runInNewTab: Boolean(c.runInNewTab)
+          }))
+        : [],
+      network: { ...base.network, ...(raw.network ?? {}), adapterMac: null, autoApply: false },
+      terminals: Array.isArray(raw.terminals)
+        ? raw.terminals.map((t: Record<string, unknown>) => ({
+            ...(t as object),
+            id: randomUUID(),
+            credentialRef: undefined
+          }) as Project['terminals'][number])
+        : []
+    }
+    return imported
+  })
   ipcMain.handle(IPC.appOpenDataDir, () => shell.openPath(store.directory).then(() => undefined))
 }
 

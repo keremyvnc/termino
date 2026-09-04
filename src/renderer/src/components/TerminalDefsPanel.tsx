@@ -48,6 +48,7 @@ export function TerminalDefsPanel({ project }: { project: Project }) {
           def={editing}
           onSave={save}
           onCancel={() => setEditing(null)}
+          onError={showToast}
         />
       )}
 
@@ -113,11 +114,13 @@ export function TerminalDefsPanel({ project }: { project: Project }) {
 function TerminalEditor({
   def,
   onSave,
-  onCancel
+  onCancel,
+  onError
 }: {
   def: TerminalDef
   onSave: (t: TerminalDef) => void
   onCancel: () => void
+  onError: (msg: string) => void
 }) {
   const [d, setD] = useState(def)
   const [password, setPassword] = useState('')
@@ -143,8 +146,7 @@ function TerminalEditor({
       if (d.kind === 'ssh' && !password && hasSecret) credentialRef = credRef
       onSave({ ...d, credentialRef, script: parseScript(scriptText) })
     } catch (e) {
-      console.error('oturum kaydedilemedi', e)
-      alert('Kaydedilemedi: ' + String((e as Error).message ?? e))
+      onError('Kaydedilemedi: ' + String((e as Error).message ?? e))
     } finally {
       setSaving(false)
     }

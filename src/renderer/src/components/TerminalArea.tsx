@@ -24,9 +24,17 @@ export function TerminalArea({ project }: { project: Project }) {
     return () => document.removeEventListener('mousedown', onDoc)
   }, [menu])
 
-  // Ctrl+Shift+T yeni sekme, Ctrl+Shift+W kapat
+  // Ctrl+Shift+T yeni sekme, Ctrl+Shift+W kapat, Alt+1..9 sekme sec
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
+      if (e.altKey && !e.ctrlKey && /^[1-9]$/.test(e.key)) {
+        const t = tabs[Number(e.key) - 1]
+        if (t) {
+          e.preventDefault()
+          setActive(project.id, t.id)
+        }
+        return
+      }
       if (!e.ctrlKey || !e.shiftKey) return
       if (e.key === 'T') {
         e.preventDefault()
@@ -38,7 +46,7 @@ export function TerminalArea({ project }: { project: Project }) {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [project.id, activeId, open, close])
+  }, [project.id, activeId, open, close, tabs, setActive])
 
   return (
     <section className="flex min-w-0 flex-1 flex-col bg-bg">
@@ -147,7 +155,9 @@ export function TerminalArea({ project }: { project: Project }) {
               <button className="btn btn-primary mt-4" onClick={() => void open(project.id, { project })}>
                 <Plus size={12} /> PowerShell aç
               </button>
-              <p className="mt-3 text-xs opacity-60">Ctrl+Shift+T yeni sekme · sağdaki Komutlar panelinden ▶ ile çalıştır</p>
+              <p className="mt-3 text-xs opacity-60">
+                Ctrl+Shift+T yeni sekme · Ctrl+K komut paleti · Ctrl+F terminalde ara · Alt+1..9 sekme
+              </p>
             </div>
           </div>
         )}

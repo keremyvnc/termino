@@ -12,6 +12,7 @@ interface AppState {
   load(): Promise<void>
   select(id: string | null): void
   createProject(): Promise<void>
+  importProject(): Promise<void>
   updateProject(patch: Partial<Project> & { id: string }): Promise<void>
   removeProject(id: string): Promise<void>
   setAdapters(adapters: AdapterInfo[]): void
@@ -48,6 +49,19 @@ export const useAppStore = create<AppState>((set, get) => ({
     const p = await window.api.projects.save(newProject())
     set((s) => ({ projects: [...s.projects, p], selectedId: p.id }))
     localStorage.setItem('termino.selected', p.id)
+  },
+
+  async importProject() {
+    try {
+      const p = await window.api.app.importProject()
+      if (!p) return
+      const saved = await window.api.projects.save(p)
+      set((s) => ({ projects: [...s.projects, saved], selectedId: saved.id }))
+      localStorage.setItem('termino.selected', saved.id)
+      get().showToast(`"${saved.name}" içe aktarıldı. Adaptör ve şifreleri yeniden ayarla.`)
+    } catch (e) {
+      get().showToast('İçe aktarma başarısız: ' + String((e as Error).message ?? e))
+    }
   },
 
   async updateProject(patch) {

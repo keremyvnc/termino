@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useAppStore, useSelectedProject } from './store/useAppStore'
 import { TitleBar } from './components/TitleBar'
 import { Sidebar } from './components/Sidebar'
@@ -7,6 +7,7 @@ import { TerminalArea } from './components/TerminalArea'
 import { RightPanel } from './components/RightPanel'
 import { EmptyState } from './components/EmptyState'
 import { Toast } from './components/Toast'
+import { CommandPalette } from './components/CommandPalette'
 
 export default function App() {
   const load = useAppStore((s) => s.load)
@@ -15,6 +16,7 @@ export default function App() {
   const refreshAdapters = useAppStore((s) => s.refreshAdapters)
   const loading = useAppStore((s) => s.loading)
   const project = useSelectedProject()
+  const [palette, setPalette] = useState(false)
 
   useEffect(() => {
     void load()
@@ -32,6 +34,17 @@ export default function App() {
       offAuto()
     }
   }, [load, setAdapters, showToast, refreshAdapters])
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.ctrlKey && !e.shiftKey && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        setPalette((p) => !p)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
 
   return (
     <div className="flex h-full flex-col">
@@ -53,6 +66,7 @@ export default function App() {
         </main>
       </div>
       <Toast />
+      {palette && project && <CommandPalette project={project} onClose={() => setPalette(false)} />}
     </div>
   )
 }

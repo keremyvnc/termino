@@ -1,7 +1,9 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import { WebLinksAddon } from '@xterm/addon-web-links'
+import { SearchAddon } from '@xterm/addon-search'
+import { TerminalSearch } from './TerminalSearch'
 import '@xterm/xterm/css/xterm.css'
 import { useTerminalStore } from '../store/useTerminalStore'
 import type { TermTab } from '../store/useTerminalStore'
@@ -33,6 +35,8 @@ export function XtermView({ tab, visible }: { tab: TermTab; visible: boolean }) 
   const hostRef = useRef<HTMLDivElement>(null)
   const termRef = useRef<Terminal | null>(null)
   const fitRef = useRef<FitAddon | null>(null)
+  const searchRef = useRef<SearchAddon | null>(null)
+  const [search, setSearch] = useState(false)
   const markRunning = useTerminalStore((s) => s.markRunning)
   const markExited = useTerminalStore((s) => s.markExited)
 
@@ -53,6 +57,31 @@ export function XtermView({ tab, visible }: { tab: TermTab; visible: boolean }) 
     const fit = new FitAddon()
     term.loadAddon(fit)
     term.loadAddon(new WebLinksAddon())
+    const searchAddon = new SearchAddon()
+    term.loadAddon(searchAddon)
+    searchRef.current = searchAddon
+    // Ctrl+F arama cubugu; Ctrl+Shift+C/V kopyala-yapistir
+    term.attachCustomKeyEventHandler((ev) => {
+      if (ev.type !== 'keydown') return true
+      // Uygulama kisayollari: xterm islemesin, pencereye kabarsin.
+      if (ev.ctrlKey && !ev.shiftKey && ev.key.toLowerCase() === 'k') return false
+      if (ev.ctrlKey && ev.shiftKey && ['T', 'W'].includes(ev.key)) return false
+      if (ev.altKey && /^[1-9]$/.test(ev.key)) return false
+      if (ev.ctrlKey && !ev.shiftKey && ev.key.toLowerCase() === 'f') {
+        setSearch(true)
+        return false
+      }
+      if (ev.ctrlKey && ev.shiftKey && ev.key.toLowerCase() === 'c') {
+        const sel = term.getSelection()
+        if (sel) void navigator.clipboard.writeText(sel)
+        return false
+      }
+      if (ev.ctrlKey && ev.shiftKey && ev.key.toLowerCase() === 'v') {
+        void navigator.clipboard.readText().then((t) => t && window.api.term.write(tab.id, t))
+        return false
+      }
+      return true
+    })
     term.open(host)
     fit.fit()
     termRef.current = term
@@ -117,10 +146,21 @@ export function XtermView({ tab, visible }: { tab: TermTab; visible: boolean }) 
   }, [visible])
 
   return (
-    <div
-      ref={hostRef}
-      className="absolute inset-0 p-2"
-      style={{ display: visible ? 'block' : 'none' }}
-    />
+    <>
+      <div
+        ref={hostRef}
+        className="absolute inset-0 p-2"
+        style={{ display: visible ? 'block' : 'none' }}
+      />
+      {visible && search && (
+        <TerminalSearch
+          addon={searchRef.current}
+          onClose={() => {
+            setSearch(false)
+            termRef.current?.focus()
+          }}
+        />
+      )}
+    </>
   )
 }

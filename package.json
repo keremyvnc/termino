@@ -24,8 +24,17 @@
       "resources/**/*"
     ],
     "win": {
-      "target": "nsis"
-    }
+      "target": "nsis",
+      "icon": "resources/icon.ico",
+      "artifactName": "${productName}-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "perMachine": false,
+      "shortcutName": "Termino"
+    },
+    "extraResources": []
   },
   "dependencies": {
     "@xterm/addon-fit": "^0.11.0",
