@@ -8,10 +8,16 @@ interface AppState {
   adapters: AdapterInfo[]
   loading: boolean
   toast: string | null
+  /** Yeni proje adini soran diyalog acik mi. */
+  newProjectOpen: boolean
 
   load(): Promise<void>
+  /** Diskteki YAML'lar disaridan degisince gelen guncel liste. Secim korunur. */
+  setProjects(projects: Project[]): void
   select(id: string | null): void
-  createProject(): Promise<void>
+  openNewProject(): void
+  closeNewProject(): void
+  createProject(name?: string): Promise<void>
   importProject(): Promise<void>
   updateProject(patch: Partial<Project> & { id: string }): Promise<void>
   removeProject(id: string): Promise<void>
@@ -28,6 +34,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   adapters: [],
   loading: true,
   toast: null,
+  newProjectOpen: false,
 
   async load() {
     const [projects, adapters] = await Promise.all([
@@ -40,14 +47,32 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ projects, adapters, loading: false, selectedId })
   },
 
+  setProjects(projects) {
+    set((s) => ({
+      projects,
+      selectedId: projects.some((p) => p.id === s.selectedId)
+        ? s.selectedId
+        : (projects[0]?.id ?? null)
+    }))
+  },
+
   select(id) {
     if (id) localStorage.setItem('termino.selected', id)
     set({ selectedId: id })
   },
 
-  async createProject() {
-    const p = await window.api.projects.save(newProject())
-    set((s) => ({ projects: [...s.projects, p], selectedId: p.id }))
+  openNewProject() {
+    set({ newProjectOpen: true })
+  },
+
+  closeNewProject() {
+    set({ newProjectOpen: false })
+  },
+
+  async createProject(name) {
+    const trimmed = name?.trim()
+    const p = await window.api.projects.save(newProject(trimmed ? { name: trimmed } : {}))
+    set((s) => ({ projects: [...s.projects, p], selectedId: p.id, newProjectOpen: false }))
     localStorage.setItem('termino.selected', p.id)
   },
 

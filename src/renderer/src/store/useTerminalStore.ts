@@ -1,121 +1,34 @@
 import { create } from 'zustand'
-import { newId } from '@shared/types'
-import type { Project, ScriptStep, TerminalDef } from '@shared/types'
-import type { TermCreateOptions } from '@shared/ipc'
+import type { CommandDef, Project, ScriptStep, TerminalDef } from '@shared/types'
+import { flattenSteps } from '@shared/steps'
+import { planCommandRun, type CommandPlan } from './commandTargets'
+import { createTab, isAlive, type OpenOptions, type TermTab } from './terminalTabs'
 
-export interface TermTab {
-  id: string
-  projectId: string
-  title: string
-  kind: 'local' | 'ssh'
-  shell: 'powershell' | 'cmd'
-  status: 'starting' | 'running' | 'exited'
-  exitCode?: number
-  /** Main surecine gonderilecek olusturma ayarlari (cols/rows haric) */
-  createOpts: Omit<TermCreateOptions, 'id' | 'cols' | 'rows'>
-}
-
-interface OpenOptions {
-  shell?: 'powershell' | 'cmd'
-  title?: string
-  def?: TerminalDef
-  project?: Project
-}
+export type { TermTab } from './terminalTabs'
+export { findTarget } from './commandTargets'
+export { expandVariables, projectVars } from './projectVariables'
 
 interface TerminalState {
   tabs: TermTab[]
-  /** projectId -> aktif sekme id */
+  /** projectId -> aktif sekme id (terminal ya da editor sekmesi) */
   activeByProject: Record<string, string>
 
   open(projectId: string, opts?: OpenOptions): Promise<string>
+  /**
+   * Oturum tanimini acar. Ayni tanima ait calisan bir sekme varsa onu one getirir;
+   * `fresh` ile her seferinde yeni sekme acilir. Web tanimi tarayicida acilir.
+   */
+  openDef(project: Project, def: TerminalDef, opts?: { fresh?: boolean }): Promise<string>
   close(id: string): void
   setActive(projectId: string, id: string): void
   markRunning(id: string): void
   markExited(id: string, exitCode: number): void
-  /** Komutu aktif sekmeye yazar; sekme yoksa acar. Enter ekler. */
-  run(
-    project: Project,
-    text: string,
-    opts: { newTab: boolean; shell: 'powershell' | 'cmd' | 'ssh' }
-  ): Promise<void>
+  /** Komut dosyasini hedef oturumda calistirir; oturum yoksa acar. */
+  runCommand(project: Project, cmd: CommandDef): Promise<void>
 }
 
-/** Sekme baslamadan once kuyruga alinan girdiler */
-export const pendingInput = new Map<string, string[]>()
-
-export function projectVars(project: Project): Record<string, string> {
-  const n = project.network
-  return {
-    ip: n.ip,
-    prefix: String(n.prefixLength),
-    mask: prefixToMask(n.prefixLength),
-    gateway: n.gateway ?? '',
-    dns: (n.dns ?? []).join(','),
-    project: project.name
-  }
-}
-
-/** Komut metnindeki {{degisken}} alanlarini proje profilinden doldurur. */
-export function expandVariables(text: string, project: Project): string {
-  const vars = projectVars(project)
-  return text.replace(/\{\{\s*([a-zA-Z_]+)\s*\}\}/g, (m, key: string) => vars[key] ?? m)
-}
-
-export function prefixToMask(prefix: number): string {
-  const bits = prefix <= 0 ? 0 : (0xffffffff << (32 - prefix)) >>> 0
-  return [24, 16, 8, 0].map((s) => (bits >>> s) & 255).join('.')
-}
-
-function buildTab(projectId: string, opts: OpenOptions, count: number): TermTab {
-  const id = newId()
-  const def = opts.def
-  if (def?.kind === 'ssh') {
-    return {
-      id,
-      projectId,
-      kind: 'ssh',
-      shell: 'powershell',
-      title: opts.title ?? def.name ?? `SSH ${count}`,
-      status: 'starting',
-      createOpts: {
-        kind: 'ssh',
-        shell: 'powershell',
-        ssh: {
-          host: def.host ?? '',
-          port: def.port ?? 22,
-          username: def.username ?? '',
-          credentialRef: def.credentialRef
-        },
-        script: def.script as ScriptStep[] | undefined,
-        defId: def.id,
-        vars: opts.project ? projectVars(opts.project) : undefined,
-        net: opts.project
-          ? {
-              adapterMac: opts.project.network.adapterMac,
-              ip: opts.project.network.ip,
-              prefixLength: opts.project.network.prefixLength
-            }
-          : undefined
-      }
-    }
-  }
-  const shell = opts.shell ?? 'powershell'
-  return {
-    id,
-    projectId,
-    kind: 'local',
-    shell,
-    title: opts.title ?? def?.name ?? `${shell === 'cmd' ? 'CMD' : 'PowerShell'} ${count}`,
-    status: 'starting',
-    createOpts: {
-      kind: 'local',
-      shell,
-      script: def?.script as ScriptStep[] | undefined,
-      defId: def?.id,
-      vars: opts.project ? projectVars(opts.project) : undefined
-    }
-  }
-}
+/** Sekme baslamadan once kuyruga alinan senaryolar. */
+const pendingScripts = new Map<string, ScriptStep[][]>()
 
 export const useTerminalStore = create<TerminalState>((set, get) => ({
   tabs: [],
@@ -126,8 +39,8 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
       await window.api.app.openExternal(opts.def.url ?? '')
       return ''
     }
-    const count = get().tabs.filter((t) => t.projectId === projectId).length + 1
-    const tab = buildTab(projectId, opts, count)
+    const index = get().tabs.filter((t) => t.projectId === projectId).length + 1
+    const tab = createTab(projectId, opts, index)
     set((s) => ({
       tabs: [...s.tabs, tab],
       activeByProject: { ...s.activeByProject, [projectId]: tab.id }
@@ -135,19 +48,24 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
     return tab.id
   },
 
+  async openDef(project, def, opts = {}) {
+    const existing = opts.fresh
+      ? undefined
+      : get().tabs.find((t) => t.createOpts.defId === def.id && isAlive(t, project.id))
+    if (existing) {
+      get().setActive(project.id, existing.id)
+      return existing.id
+    }
+    return get().open(project.id, { def, project })
+  },
+
   close(id) {
     window.api.term.kill(id)
-    pendingInput.delete(id)
+    pendingScripts.delete(id)
     set((s) => {
-      const tab = s.tabs.find((t) => t.id === id)
+      const closed = s.tabs.find((t) => t.id === id)
       const tabs = s.tabs.filter((t) => t.id !== id)
-      const activeByProject = { ...s.activeByProject }
-      if (tab && activeByProject[tab.projectId] === id) {
-        const next = tabs.filter((t) => t.projectId === tab.projectId).at(-1)
-        if (next) activeByProject[tab.projectId] = next.id
-        else delete activeByProject[tab.projectId]
-      }
-      return { tabs, activeByProject }
+      return { tabs, activeByProject: reassignActive(s.activeByProject, tabs, closed, id) }
     })
   },
 
@@ -157,12 +75,7 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
 
   markRunning(id) {
     set((s) => ({ tabs: s.tabs.map((t) => (t.id === id ? { ...t, status: 'running' } : t)) }))
-    const queued = pendingInput.get(id)
-    if (queued) {
-      pendingInput.delete(id)
-      // Kabugun prompt basmasi icin kisa bir sure bekle.
-      setTimeout(() => queued.forEach((q) => window.api.term.write(id, q)), 400)
-    }
+    flushPendingScripts(id)
   },
 
   markExited(id, exitCode) {
@@ -171,43 +84,59 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
     }))
   },
 
-  async run(project, text, opts) {
-    const line = text.endsWith('\r') ? text : text + '\r'
+  async runCommand(project, cmd) {
+    // Ic ice komut cagrilari (run) burada cozulur; motor yalnizca duz adimlari gorur.
+    const steps = flattenSteps(project, cmd.steps)
+    if (!steps.length) throw new Error('Komutta adım yok.')
     const state = get()
-    const activeId = state.activeByProject[project.id]
-    const active = state.tabs.find((t) => t.id === activeId)
+    const plan = planCommandRun(project, cmd, state.tabs, state.activeByProject[project.id])
+    const tabId = await applyPlan(plan, project, state)
 
-    if (opts.shell === 'ssh') {
-      // SSH komutlari: aktif SSH sekmesine yazilir; yoksa projedeki ilk SSH tanimi acilir.
-      const target =
-        active?.kind === 'ssh' && active.status !== 'exited'
-          ? active
-          : state.tabs.find(
-              (t) => t.projectId === project.id && t.kind === 'ssh' && t.status !== 'exited'
-            )
-      if (target && !opts.newTab) {
-        state.setActive(project.id, target.id)
-        window.api.term.write(target.id, line)
-        return
-      }
-      const def = project.terminals.find((d) => d.kind === 'ssh')
-      if (!def) throw new Error('Bu projede SSH oturum tanımı yok.')
-      const id = await state.open(project.id, { def, project })
-      pendingInput.set(id, [line])
-      return
-    }
-
-    const reuse =
-      !opts.newTab &&
-      active &&
-      active.kind === 'local' &&
-      active.status !== 'exited' &&
-      active.shell === opts.shell
-    if (reuse && active) {
-      window.api.term.write(active.id, line)
-      return
-    }
-    const id = await state.open(project.id, { shell: opts.shell, project })
-    pendingInput.set(id, [line])
+    const tab = get().tabs.find((t) => t.id === tabId)
+    if (tab?.status === 'running') await window.api.term.runScript(tabId, steps)
+    else queueScript(tabId, steps)
   }
 }))
+
+/** Plani uygular ve komutun yazilacagi sekmenin id'sini dondurur. */
+function applyPlan(plan: CommandPlan, project: Project, state: TerminalState): Promise<string> {
+  switch (plan.type) {
+    case 'openDef':
+      return state.openDef(project, plan.def, { fresh: plan.fresh })
+    case 'useTab':
+      state.setActive(project.id, plan.tabId)
+      return Promise.resolve(plan.tabId)
+    case 'openSsh':
+      return state.open(project.id, { def: plan.def, project })
+    case 'openLocal':
+      return state.open(project.id, { shell: plan.shell, project })
+  }
+}
+
+/** Kapanan sekme aktifse, ayni projedeki son sekme aktif olur. */
+function reassignActive(
+  activeByProject: Record<string, string>,
+  remaining: TermTab[],
+  closed: TermTab | undefined,
+  closedId: string
+): Record<string, string> {
+  if (!closed || activeByProject[closed.projectId] !== closedId) return activeByProject
+  const next = { ...activeByProject }
+  const fallback = remaining.filter((t) => t.projectId === closed.projectId).at(-1)
+  if (fallback) next[closed.projectId] = fallback.id
+  else delete next[closed.projectId]
+  return next
+}
+
+function queueScript(tabId: string, steps: ScriptStep[]): void {
+  pendingScripts.set(tabId, [...(pendingScripts.get(tabId) ?? []), steps])
+}
+
+/** Sekme hazir olunca bekleyen senaryolar sirayla gonderilir. */
+function flushPendingScripts(tabId: string): void {
+  const queued = pendingScripts.get(tabId)
+  if (!queued) return
+  pendingScripts.delete(tabId)
+  // Main tarafi oturum hazir olana kadar zaten bekletir; sira korunur.
+  queued.forEach((steps) => void window.api.term.runScript(tabId, steps))
+}

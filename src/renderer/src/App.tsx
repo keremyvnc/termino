@@ -1,16 +1,18 @@
 import { useEffect, useState } from 'react'
 import { useAppStore, useSelectedProject } from './store/useAppStore'
 import { TitleBar } from './components/TitleBar'
-import { Sidebar } from './components/Sidebar'
+import { Sidebar } from './components/sidebar/Sidebar'
 import { ProjectHeader } from './components/ProjectHeader'
-import { TerminalArea } from './components/TerminalArea'
+import { TerminalArea } from './components/terminalArea/TerminalArea'
 import { RightPanel } from './components/RightPanel'
 import { EmptyState } from './components/EmptyState'
 import { Toast } from './components/Toast'
-import { CommandPalette } from './components/CommandPalette'
+import { CommandPalette } from './components/palette/CommandPalette'
+import { NewProjectDialog } from './components/NewProjectDialog'
 
 export default function App() {
   const load = useAppStore((s) => s.load)
+  const setProjects = useAppStore((s) => s.setProjects)
   const setAdapters = useAppStore((s) => s.setAdapters)
   const showToast = useAppStore((s) => s.showToast)
   const refreshAdapters = useAppStore((s) => s.refreshAdapters)
@@ -20,6 +22,7 @@ export default function App() {
 
   useEffect(() => {
     void load()
+    const offProjects = window.api.projects.onChanged(setProjects)
     const offAdapters = window.api.network.onAdaptersChanged(setAdapters)
     const offAuto = window.api.network.onAutoApplied((ev) => {
       showToast(
@@ -30,10 +33,11 @@ export default function App() {
       setTimeout(() => void refreshAdapters(), 1500)
     })
     return () => {
+      offProjects()
       offAdapters()
       offAuto()
     }
-  }, [load, setAdapters, showToast, refreshAdapters])
+  }, [load, setProjects, setAdapters, showToast, refreshAdapters])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
@@ -66,6 +70,7 @@ export default function App() {
         </main>
       </div>
       <Toast />
+      <NewProjectDialog />
       {palette && project && <CommandPalette project={project} onClose={() => setPalette(false)} />}
     </div>
   )

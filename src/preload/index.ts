@@ -6,7 +6,12 @@ const api: TerminoApi = {
   projects: {
     list: () => ipcRenderer.invoke(IPC.projectsList),
     save: (p: Project) => ipcRenderer.invoke(IPC.projectsSave, p),
-    remove: (id: string) => ipcRenderer.invoke(IPC.projectsRemove, id)
+    remove: (id: string) => ipcRenderer.invoke(IPC.projectsRemove, id),
+    onChanged: (cb) => {
+      const handler = (_: unknown, projects: Project[]): void => cb(projects)
+      ipcRenderer.on(IPC.projectsChanged, handler)
+      return () => ipcRenderer.removeListener(IPC.projectsChanged, handler)
+    }
   },
   network: {
     listAdapters: () => ipcRenderer.invoke(IPC.netListAdapters),
@@ -30,6 +35,7 @@ const api: TerminoApi = {
     write: (id, data) => ipcRenderer.send(IPC.termWrite, id, data),
     resize: (id, cols, rows) => ipcRenderer.send(IPC.termResize, id, cols, rows),
     kill: (id) => ipcRenderer.send(IPC.termKill, id),
+    runScript: (id, steps) => ipcRenderer.invoke(IPC.termRunScript, id, steps),
     onData: (cb) => {
       const handler = (_: unknown, p: { id: string; data: string }): void => cb(p.id, p.data)
       ipcRenderer.on(IPC.termData, handler)

@@ -60,6 +60,8 @@ export interface TerminoApi {
     list(): Promise<Project[]>
     save(project: Project): Promise<Project>
     remove(id: string): Promise<void>
+    /** Proje dizini disaridan degisince guncel liste gelir. */
+    onChanged(cb: (projects: Project[]) => void): () => void
   }
   network: {
     listAdapters(): Promise<AdapterInfo[]>
@@ -75,6 +77,8 @@ export interface TerminoApi {
     write(id: string, data: string): void
     resize(id: string, cols: number, rows: number): void
     kill(id: string): void
+    /** Acik oturumda senaryo adimlarini calistirir (komut dosyasi). */
+    runScript(id: string, steps: ScriptStep[]): Promise<void>
     onData(cb: (id: string, data: string) => void): () => void
     onExit(cb: (info: TermExitInfo) => void): () => void
   }
@@ -102,6 +106,7 @@ export const IPC = {
   projectsList: 'projects:list',
   projectsSave: 'projects:save',
   projectsRemove: 'projects:remove',
+  projectsChanged: 'projects:changed',
   netListAdapters: 'net:listAdapters',
   netAdaptersChanged: 'net:adaptersChanged',
   netApply: 'net:apply',
@@ -113,6 +118,7 @@ export const IPC = {
   termWrite: 'term:write',
   termResize: 'term:resize',
   termKill: 'term:kill',
+  termRunScript: 'term:runScript',
   termData: 'term:data',
   termExit: 'term:exit',
   credSet: 'cred:set',

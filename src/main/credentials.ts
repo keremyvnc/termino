@@ -3,11 +3,19 @@ import { promises as fs } from 'fs'
 import { join } from 'path'
 
 /**
+ * Yalnizca sifre okuyabilen dar arayuz. Terminal oturumlari ve senaryo motoru
+ * kasanin tamamina degil buna bagimlidir; yazma/silme yetkisi almazlar (ISP).
+ */
+export interface SecretReader {
+  get(ref: string): Promise<string | null>
+}
+
+/**
  * Sifre kasasi. Her sifre Windows DPAPI (safeStorage) ile sifrelenir ve
  * %APPDATA%/termino/vault.json icinde base64 olarak tutulur.
  * Sifreler yalnizca main surecinde cozulur; renderer'a asla gonderilmez.
  */
-export class CredentialVault {
+export class CredentialVault implements SecretReader {
   private file = join(app.getPath('userData'), 'vault.json')
   private cache: Record<string, string> | null = null
 

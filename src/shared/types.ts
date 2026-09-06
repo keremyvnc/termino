@@ -3,13 +3,20 @@
 export type ShellKind = 'powershell' | 'cmd' | 'ssh'
 export type TerminalKind = 'local' | 'ssh' | 'web'
 
+/**
+ * Komut dosyasi (commands/<ad>.yaml): sirayla calisan bir adim surusu.
+ * Hedef bir oturum tanimiysa (`target`) o oturumda, degilse `shell`e gore
+ * aktif/yeni yerel terminalde calisir.
+ */
 export interface CommandDef {
   id: string
   name: string
+  /** Hedef oturum taniminin adi. Bos: `shell`e gore yerel terminal ya da aktif SSH. */
+  target?: string
   shell: ShellKind
-  text: string
-  /** true ise yeni sekmede calisir, false ise aktif terminale yazilir */
+  /** true ise her seferinde yeni sekme acilir, false ise acik olan kullanilir */
   runInNewTab: boolean
+  steps: ScriptStep[]
 }
 
 export interface NetworkProfile {
@@ -44,6 +51,8 @@ export type ScriptStep =
   | { type: 'send'; text: string }
   | { type: 'expect'; pattern: string; timeoutMs?: number }
   | { type: 'wait'; ms: number }
+  /** Baska bir komut dosyasini (adiyla) bu noktada calistirir; calistirmadan once duzlestirilir. */
+  | { type: 'run'; command: string }
 
 export interface Project {
   id: string
