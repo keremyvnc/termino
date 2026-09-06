@@ -23,6 +23,6 @@ export function registerAppIpc({ projects, transfer }: IpcContext): void {
 /** Sema yazilmamissa http varsayilir; http/https disindaki semalar reddedilir. */
 function toHttpUrl(url: string): string {
   const withScheme = HAS_SCHEME.test(url) ? url : `http://${url}`
-  if (!IS_HTTP.test(withScheme)) throw new Error('Yalnızca http/https adresleri açılabilir')
+  if (!IS_HTTP.test(withScheme)) throw new Error('Only http/https URLs can be opened')
   return withScheme
 }

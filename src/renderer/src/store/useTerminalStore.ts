@@ -87,7 +87,7 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
   async runCommand(project, cmd) {
     // Ic ice komut cagrilari (run) burada cozulur; motor yalnizca duz adimlari gorur.
     const steps = flattenSteps(project, cmd.steps)
-    if (!steps.length) throw new Error('Komutta adım yok.')
+    if (!steps.length) throw new Error('The command has no steps.')
     const state = get()
     const plan = planCommandRun(project, cmd, state.tabs, state.activeByProject[project.id])
     const tabId = await applyPlan(plan, project, state)

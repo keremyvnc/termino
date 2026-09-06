@@ -20,7 +20,7 @@ export function withoutCredentials(project: Project): Project {
 
 /** Dosya adini disk icin guvenli hale getirir. */
 export function toFileName(projectName: string): string {
-  return projectName.replace(/[^\w\-]+/g, '_') || 'proje'
+  return projectName.replace(/[^\w\-]+/g, '_') || 'project'
 }
 
 /**
@@ -29,7 +29,7 @@ export function toFileName(projectName: string): string {
  */
 export function parseImportedProject(raw: unknown): Project {
   const source = raw as Record<string, unknown> | null
-  if (!source || typeof source.name !== 'string') throw new Error('Geçersiz proje dosyası')
+  if (!source || typeof source.name !== 'string') throw new Error('Invalid project file')
 
   const base = newProject()
   return {

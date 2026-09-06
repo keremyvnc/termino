@@ -33,6 +33,6 @@ async function readSecret(
 ): Promise<string> {
   const scoped = sessionDefId ? await secrets.get(`term:${sessionDefId}:${name}`) : null
   const value = scoped ?? (await secrets.get(name))
-  if (value === null) throw new Error(`kasada "${name}" adlı şifre yok`)
+  if (value === null) throw new Error(`no secret named "${name}" in the vault`)
   return value
 }

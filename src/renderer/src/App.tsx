@@ -27,8 +27,8 @@ export default function App() {
     const offAuto = window.api.network.onAutoApplied((ev) => {
       showToast(
         ev.result.ok
-          ? `${ev.projectName}: ${ev.adapterName} profili otomatik uygulandı`
-          : `${ev.projectName}: otomatik uygulama başarısız — ${ev.result.message}`
+          ? `${ev.projectName}: profile applied automatically to ${ev.adapterName}`
+          : `${ev.projectName}: automatic apply failed — ${ev.result.message}`
       )
       setTimeout(() => void refreshAdapters(), 1500)
     })

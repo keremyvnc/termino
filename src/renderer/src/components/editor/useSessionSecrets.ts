@@ -36,10 +36,10 @@ export function useSessionSecrets(project: Project, def: TerminalDef) {
       await window.api.creds.set(credentialRef, password)
       if (def.credentialRef !== credentialRef) await patch({ credentialRef })
       setHasPassword(true)
-      showToast('Şifre kasaya kaydedildi.')
+      showToast('Password saved to vault.')
       return true
     } catch (e) {
-      showToast('Kaydedilemedi: ' + String((e as Error).message ?? e))
+      showToast('Could not save: ' + String((e as Error).message ?? e))
       return false
     }
   }
@@ -52,7 +52,7 @@ export function useSessionSecrets(project: Project, def: TerminalDef) {
       await patch({ secrets: [...new Set([...(def.secrets ?? []), name])] })
       return true
     } catch (e) {
-      showToast('Kaydedilemedi: ' + String((e as Error).message ?? e))
+      showToast('Could not save: ' + String((e as Error).message ?? e))
       return false
     }
   }

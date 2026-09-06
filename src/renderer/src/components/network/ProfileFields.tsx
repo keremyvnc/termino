@@ -20,7 +20,7 @@ export function ProfileFields({
     <>
       <div className="grid grid-cols-[1fr_88px] gap-2">
         <div>
-          <label className="label">IP adresi</label>
+          <label className="label">IP address</label>
           <input
             className={`input font-mono ${profile.ip ? invalid(validity.ip) : ''}`}
             value={profile.ip}
@@ -42,10 +42,10 @@ export function ProfileFields({
         </div>
       </div>
       <div className="mb-2 mt-1 font-mono text-[11px] text-muted">
-        maske {prefixToMask(profile.prefixLength)}
+        mask {prefixToMask(profile.prefixLength)}
       </div>
 
-      <label className="label">Ağ geçidi (opsiyonel)</label>
+      <label className="label">Gateway (optional)</label>
       <input
         className={`input mb-2 font-mono ${invalid(validity.gateway)}`}
         value={profile.gateway ?? ''}
@@ -53,7 +53,7 @@ export function ProfileFields({
         placeholder="192.168.1.1"
       />
 
-      <label className="label">DNS (virgülle)</label>
+      <label className="label">DNS (comma-separated)</label>
       <input
         className={`input mb-3 font-mono ${invalid(validity.dns)}`}
         value={(profile.dns ?? []).join(', ')}
@@ -67,7 +67,7 @@ export function ProfileFields({
           checked={profile.autoApply}
           onChange={(e) => onChange({ autoApply: e.target.checked })}
         />
-        Adaptör takılınca otomatik uygula
+        Apply automatically when the adapter is connected
       </label>
     </>
   )

@@ -83,9 +83,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       const saved = await window.api.projects.save(p)
       set((s) => ({ projects: [...s.projects, saved], selectedId: saved.id }))
       localStorage.setItem('termino.selected', saved.id)
-      get().showToast(`"${saved.name}" içe aktarıldı. Adaptör ve şifreleri yeniden ayarla.`)
+      get().showToast(`"${saved.name}" imported. Set the adapter and passwords again.`)
     } catch (e) {
-      get().showToast('İçe aktarma başarısız: ' + String((e as Error).message ?? e))
+      get().showToast('Import failed: ' + String((e as Error).message ?? e))
     }
   },
 
@@ -116,7 +116,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     try {
       set({ adapters: await window.api.network.listAdapters() })
     } catch (e) {
-      get().showToast('Adaptörler okunamadı: ' + String(e))
+      get().showToast('Could not read adapters: ' + String(e))
     }
   },
 

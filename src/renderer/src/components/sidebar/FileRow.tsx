@@ -67,7 +67,7 @@ export function FileRow({
         className={`btn-icon h-5 w-5 opacity-0 group-hover:opacity-100 ${
           confirming ? 'text-red-300 opacity-100' : ''
         }`}
-        title={confirming ? 'Silmek için tekrar tıkla' : 'Sil'}
+        title={confirming ? 'Click again to delete' : 'Delete'}
         onClick={(e) => {
           e.stopPropagation()
           remove()
@@ -77,7 +77,7 @@ export function FileRow({
       </button>
       <button
         className="btn-icon h-5 w-5 text-emerald-400 hover:bg-emerald-400/15"
-        title={session ? (session.kind === 'web' ? 'Tarayıcıda aç' : 'Bağlan') : 'Çalıştır'}
+        title={session ? (session.kind === 'web' ? 'Open in browser' : 'Connect') : 'Run'}
         onClick={(e) => {
           e.stopPropagation()
           run()

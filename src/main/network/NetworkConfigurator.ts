@@ -36,7 +36,7 @@ export class NetworkConfigurator implements NetworkApplier {
     const prefixLength = clampPrefixLength(profile.prefixLength)
 
     if (await this.isAlreadyApplied(adapter, profile)) {
-      return { ok: true, message: 'Profil zaten uygulanmış.' }
+      return { ok: true, message: 'Profile is already applied.' }
     }
 
     await this.backups.captureOnce(adapter)
@@ -50,13 +50,13 @@ export class NetworkConfigurator implements NetworkApplier {
     const adapter = await this.requireAdapter(mac)
     await this.backups.captureOnce(adapter)
     const result = await this.elevated.run(dhcpScript(mac))
-    return result.ok ? { ok: true, message: `${adapter.name} DHCP'ye alındı.` } : result
+    return result.ok ? { ok: true, message: `${adapter.name} switched to DHCP.` } : result
   }
 
   /** Ilk uygulamadan onceki duruma dondurur ve yedegi siler. */
   async restoreBackup(mac: string): Promise<NetApplyResult> {
     const backup = await this.backups.read(mac)
-    if (!backup) return { ok: false, message: 'Bu adaptör için yedek yok.' }
+    if (!backup) return { ok: false, message: 'There is no backup for this adapter.' }
 
     const result =
       backup.dhcp || !backup.ip
@@ -67,14 +67,14 @@ export class NetworkConfigurator implements NetworkApplier {
     await this.backups.delete(mac)
     return {
       ok: true,
-      message: `Önceki ayar geri yüklendi (${backup.dhcp ? 'DHCP' : backup.ip}).`
+      message: `Previous settings restored (${backup.dhcp ? 'DHCP' : backup.ip}).`
     }
   }
 
   private async requireAdapter(mac: string): Promise<AdapterInfo> {
     assertMac(mac)
     const adapter = (await this.adapters.list()).find((a) => a.mac === mac)
-    if (!adapter) throw new Error('Adaptör şu an takılı değil.')
+    if (!adapter) throw new Error('The adapter is not currently plugged in.')
     return adapter
   }
 
@@ -87,7 +87,7 @@ export class NetworkConfigurator implements NetworkApplier {
 
 function validateProfile(profile: NetworkProfile): void {
   assertIpv4(profile.ip, 'IP')
-  if (profile.gateway) assertIpv4(profile.gateway, 'Ağ geçidi')
+  if (profile.gateway) assertIpv4(profile.gateway, 'gateway')
   for (const dns of profile.dns ?? []) assertIpv4(dns, 'DNS')
 }
 

@@ -2,7 +2,7 @@ import { Globe, Play, Server, Terminal, Zap } from 'lucide-react'
 import type { CommandDef, Project, TerminalDef } from '@shared/types'
 import { expandVariables } from '../../store/projectVariables'
 
-export type PaletteGroup = 'komut' | 'oturum' | 'eylem'
+export type PaletteGroup = 'command' | 'session' | 'action'
 
 export interface PaletteItem {
   id: string
@@ -39,7 +39,7 @@ export function filterPaletteItems(items: PaletteItem[], query: string): Palette
 function commandItem(project: Project, cmd: CommandDef, actions: PaletteActions): PaletteItem {
   return {
     id: `c:${cmd.id}`,
-    group: 'komut',
+    group: 'command',
     label: cmd.name,
     hint: commandHint(project, cmd),
     icon: <Play size={13} className="text-accent" />,
@@ -59,7 +59,7 @@ function commandHint(project: Project, cmd: CommandDef): string {
 function sessionItem(project: Project, def: TerminalDef, actions: PaletteActions): PaletteItem {
   return {
     id: `t:${def.id}`,
-    group: 'oturum',
+    group: 'session',
     label: def.name,
     hint: sessionHint(def),
     icon: sessionIcon(def),
@@ -70,7 +70,7 @@ function sessionItem(project: Project, def: TerminalDef, actions: PaletteActions
 function sessionHint(def: TerminalDef): string {
   if (def.kind === 'ssh') return `${def.username}@${def.host}:${def.port}`
   if (def.kind === 'web') return def.url ?? ''
-  return 'yerel PowerShell'
+  return 'local PowerShell'
 }
 
 function sessionIcon(def: TerminalDef): React.ReactNode {
@@ -83,31 +83,31 @@ function quickActions(project: Project, actions: PaletteActions): PaletteItem[] 
   return [
     {
       id: 'a:ps',
-      group: 'eylem',
-      label: 'Yeni PowerShell',
+      group: 'action',
+      label: 'New PowerShell',
       hint: 'Ctrl+Shift+T',
       icon: <Terminal size={13} className="text-muted" />,
       run: () => actions.openTerminal(project.id, { project })
     },
     {
       id: 'a:cmd',
-      group: 'eylem',
-      label: 'Yeni CMD',
+      group: 'action',
+      label: 'New CMD',
       hint: '',
       icon: <Terminal size={13} className="text-muted" />,
       run: () => actions.openTerminal(project.id, { project, shell: 'cmd' })
     },
     {
       id: 'a:net',
-      group: 'eylem',
-      label: 'Ağ profilini uygula',
+      group: 'action',
+      label: 'Apply network profile',
       hint: project.network.adapterMac
         ? `${project.network.ip}/${project.network.prefixLength}`
-        : 'adaptör seçilmedi',
+        : 'no adapter selected',
       icon: <Zap size={13} className="text-amber-400" />,
       run: async () => {
         const mac = project.network.adapterMac
-        if (!mac) return actions.showToast('Önce Ağ sekmesinden adaptör seç.')
+        if (!mac) return actions.showToast('Select an adapter in the Network panel first.')
         const result = await window.api.network.apply(mac, project.network)
         actions.showToast(result.message)
       }

@@ -9,7 +9,7 @@ export function registerProjectIpc({ projects, logger }: IpcContext): void {
 
   ipcMain.handle(IPC.projectsSave, async (_e, project: Project) => {
     const saved = await projects.save(project)
-    logger.log('projects:save', saved.id, saved.terminals.length, 'oturum')
+    logger.log('projects:save', saved.id, saved.terminals.length, 'sessions')
     return saved
   })
 

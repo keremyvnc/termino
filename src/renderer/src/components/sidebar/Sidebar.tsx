@@ -19,12 +19,12 @@ export function Sidebar() {
   return (
     <aside className="flex w-72 shrink-0 flex-col border-r border-border bg-panel">
       <div className="section-title">
-        <span>Projeler</span>
+        <span>Projects</span>
         <span className="flex items-center">
-          <button className="btn-icon" title="Proje içe aktar" onClick={() => void importProject()}>
+          <button className="btn-icon" title="Import project" onClick={() => void importProject()}>
             <Import size={13} />
           </button>
-          <button className="btn-icon" title="Yeni proje" onClick={openNewProject}>
+          <button className="btn-icon" title="New project" onClick={openNewProject}>
             <Plus size={14} />
           </button>
         </span>
@@ -32,7 +32,7 @@ export function Sidebar() {
 
       <ul className="min-h-0 flex-1 overflow-y-auto px-1.5 pb-2">
         {projects.length === 0 && (
-          <li className="px-2 py-6 text-center text-xs text-muted">Henüz proje yok</li>
+          <li className="px-2 py-6 text-center text-xs text-muted">No projects yet</li>
         )}
         {projects.map((project) => (
           <ProjectNode
@@ -56,10 +56,10 @@ function SidebarFooter() {
       <span>{VERSION}</span>
       <button
         className="flex items-center gap-1 hover:text-fg"
-        title="Veri klasörünü aç (YAML dosyaları)"
+        title="Open data folder (YAML files)"
         onClick={() => void window.api.app.openDataDir()}
       >
-        <FolderOpen size={12} /> dosyalar
+        <FolderOpen size={12} /> files
       </button>
     </footer>
   )

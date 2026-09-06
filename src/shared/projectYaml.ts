@@ -22,19 +22,19 @@ import { newId, newProject } from './types'
 const SHELLS: ShellKind[] = ['powershell', 'cmd', 'ssh']
 const KINDS: TerminalKind[] = ['local', 'ssh', 'web']
 
-const COMMAND_HEADER = `# Komut dosyasi. Adimlar sirayla calisir.
-#   send: <komut>        komutu yazar, cikti durulana kadar bekler
-#   expect: <regex>      desen gelene kadar bekler (timeout: ms)
-#   wait: <ms>           bekler
-#   run: <komut adi>     baska bir komut dosyasini bu noktada calistirir
-# target: hedef oturumun adi (sessions/ altindaki dosya). Bos ise shell'e gore
-# yerel terminal (powershell/cmd) ya da acik olan SSH sekmesi kullanilir.
-# Degiskenler: {{ip}} {{gateway}} {{project}} {{secret:ad}}
+const COMMAND_HEADER = `# Command file. Steps run in order.
+#   send: <command>        types the command, waits until output settles
+#   expect: <regex>        waits until the pattern appears (timeout: ms)
+#   wait: <ms>             waits
+#   run: <command name>    runs another command file at this point
+# target: name of the target session (file under sessions/). If empty, the shell
+# decides: local terminal (powershell/cmd) or the currently open SSH tab.
+# Variables: {{ip}} {{gateway}} {{project}} {{secret:name}}
 `
 
-const SESSION_HEADER = `# Oturum dosyasi. kind: ssh | local | web
-# Sifre bu dosyaya yazilmaz; credentialRef kasadaki anahtari gosterir.
-# script: baglanti sonrasi otomatik adimlar (send/expect/wait).
+const SESSION_HEADER = `# Session file. kind: ssh | local | web
+# The password is never written here; credentialRef points to the vault key.
+# script: automatic steps after connecting (send/expect/wait).
 `
 
 // ---------- Komut ----------
@@ -52,7 +52,7 @@ export function commandToYaml(cmd: CommandDef): string {
 export function commandFromYaml(text: string, base: Pick<CommandDef, 'id'>): CommandDef {
   const raw = asObject(parse(text))
   const name = str(raw.name)
-  if (!name) throw new Error('"name" alanı zorunlu')
+  if (!name) throw new Error('The "name" field is required')
   const shell = str(raw.shell) as ShellKind
   const target = str(raw.target) || undefined
   return {
@@ -84,21 +84,21 @@ export function sessionToYaml(def: TerminalDef): string {
 export function sessionFromYaml(text: string, base: Pick<TerminalDef, 'id'>): TerminalDef {
   const raw = asObject(parse(text))
   const name = str(raw.name)
-  if (!name) throw new Error('"name" alanı zorunlu')
+  if (!name) throw new Error('The "name" field is required')
   const kind = str(raw.kind) as TerminalKind
-  if (!KINDS.includes(kind)) throw new Error('"kind" ssh, local veya web olmalı')
+  if (!KINDS.includes(kind)) throw new Error('"kind" must be ssh, local or web')
   const def: TerminalDef = { id: str(raw.id) || base.id, name, kind }
   if (kind === 'ssh') {
     def.host = str(raw.host)
     def.port = Number(raw.port) || 22
     def.username = str(raw.username)
-    if (!def.host || !def.username) throw new Error('SSH için "host" ve "username" gerekli')
+    if (!def.host || !def.username) throw new Error('SSH requires "host" and "username"')
     const ref = str(raw.credentialRef)
     if (ref) def.credentialRef = ref
   }
   if (kind === 'web') {
     def.url = str(raw.url)
-    if (!def.url) throw new Error('Web için "url" gerekli')
+    if (!def.url) throw new Error('Web requires "url"')
   }
   if (Array.isArray(raw.secrets)) def.secrets = raw.secrets.map(String).filter(Boolean)
   const script = stepsFromYaml(raw.script)
@@ -168,7 +168,7 @@ export function stepsFromYaml(value: unknown): ScriptStep[] {
       const timeout = Number(o.timeout ?? o.timeoutMs)
       steps.push({ type: 'expect', pattern: str(o.expect), ...(timeout ? { timeoutMs: timeout } : {}) })
     } else if ('wait' in o) steps.push({ type: 'wait', ms: Number(o.wait) || 0 })
-    else throw new Error(`adım ${i + 1}: send, expect, wait veya run olmalı`)
+    else throw new Error(`step ${i + 1}: must be send, expect, wait or run`)
   })
   return steps
 }
@@ -182,7 +182,7 @@ const TR_MAP: Record<string, string> = {
 /** Ad → dosya adi (uzantisiz). Turkce harfler cevrilir, geri kalan tire olur. */
 export function toSlug(name: string): string {
   const ascii = name.replace(/[çğıöşüÇĞİÖŞÜ]/g, (ch) => TR_MAP[ch] ?? ch)
-  return ascii.toLowerCase().replace(/[^a-z0-9._-]+/g, '-').replace(/^-+|-+$/g, '') || 'adsiz'
+  return ascii.toLowerCase().replace(/[^a-z0-9._-]+/g, '-').replace(/^-+|-+$/g, '') || 'untitled'
 }
 
 /** Ayni ada sahip dosyalar catismasin: ikinciden itibaren -2, -3 ... eklenir. */

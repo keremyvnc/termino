@@ -40,7 +40,7 @@ export class CredentialVault implements SecretReader {
   }
 
   async set(ref: string, secret: string): Promise<void> {
-    if (!this.available()) throw new Error('Bu sistemde şifreleme kullanılamıyor.')
+    if (!this.available()) throw new Error('Encryption is not available on this system.')
     const store = await this.load()
     store[ref] = safeStorage.encryptString(secret).toString('base64')
     await this.persist()

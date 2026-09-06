@@ -85,7 +85,7 @@ export class AdapterWatcher {
       this.lastSignature = signature
       this.onChange(adapters)
     } catch (e) {
-      console.warn('Adaptor taramasi basarisiz', e)
+      console.warn('Adapter scan failed', e)
     } finally {
       this.scanning = false
     }

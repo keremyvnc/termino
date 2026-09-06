@@ -64,7 +64,7 @@ export class ElevatedRunner {
       const cancelled = /canceled|iptal|1223/i.test(text)
       return {
         status: 'launchFailed',
-        result: { ok: false, message: cancelled ? 'Yönetici onayı iptal edildi.' : text.trim() }
+        result: { ok: false, message: cancelled ? 'Administrator approval was cancelled.' : text.trim() }
       }
     }
   }
@@ -74,7 +74,7 @@ export class ElevatedRunner {
 function defaultFor(status: 'completed' | 'scriptError'): NetApplyResult {
   return status === 'completed'
     ? { ok: true, message: '' }
-    : { ok: false, message: 'Yükseltilmiş betik hata verdi, ayrıntı alınamadı.' }
+    : { ok: false, message: 'The elevated script failed; details could not be retrieved.' }
 }
 
 /** Govdeyi try/catch ile sarar ve sonucunu BOM'suz UTF-8 JSON olarak yazdirir. */

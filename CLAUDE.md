@@ -137,7 +137,7 @@ SOLID'e gore ayristirma. Yeni kod yazarken bu sinirlari koru:
 - Adaptor eslemesi MAC ile yapilir, adaptor adiyla degil (adlar degisir).
 - IP atama yonetici hakki ister; uygulamanin tamami degil, sadece o islem UAC ile yukseltilir (Asama 3).
 - Terminal turleri saglayici (provider) arayuzu uzerinden eklenir: local, ssh, ileride serial/telnet (Asama 4).
-- UI metinleri Turkce.
+- UI metinleri Ingilizce (kullanici istegi, Eylul 2026). Kod yorumlari Turkce kalabilir.
 
 ## Asamalar
 

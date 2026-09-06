@@ -47,17 +47,17 @@ export function NewProjectDialog() {
       >
         <div className="flex items-center gap-2 border-b border-border px-4 py-3">
           <FolderPlus size={15} className="text-accent" />
-          <h2 className="text-sm font-semibold">Yeni proje</h2>
+          <h2 className="text-sm font-semibold">New project</h2>
         </div>
         <div className="px-4 py-4">
           <label className="label" htmlFor="new-project-name">
-            Proje adı
+            Project name
           </label>
           <input
             id="new-project-name"
             ref={inputRef}
             className="input"
-            placeholder="Örn. Saha Testi"
+            placeholder="e.g. Field Test"
             value={name}
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => {
@@ -67,14 +67,14 @@ export function NewProjectDialog() {
               }
             }}
           />
-          <p className="mt-2 text-[11px] text-muted">Boş bırakırsan "Yeni Proje" adı kullanılır.</p>
+          <p className="mt-2 text-[11px] text-muted">Leave empty to use the name "New Project".</p>
         </div>
         <div className="flex justify-end gap-2 border-t border-border px-4 py-2.5">
           <button type="button" className="btn" onClick={close}>
-            Vazgeç
+            Cancel
           </button>
           <button type="submit" className="btn btn-primary" disabled={busy}>
-            Oluştur
+            Create
           </button>
         </div>
       </form>

@@ -29,5 +29,5 @@ export function fileTitle(project: Project, tab: EditorTab): string {
     tab.kind === 'session'
       ? project.terminals.find((t) => t.id === tab.defId)
       : project.commands.find((c) => c.id === tab.defId)
-  return def ? def.name : '(silindi)'
+  return def ? def.name : '(deleted)'
 }

@@ -25,7 +25,7 @@ export function NewTerminalButton({ onOpen }: { onOpen(shell?: LocalShell): void
     <div ref={containerRef} className="relative mb-1 flex shrink-0 items-center">
       <button
         className="btn btn-primary rounded-r-none border-r-0"
-        title="Yeni PowerShell (Ctrl+Shift+T)"
+        title="New PowerShell (Ctrl+Shift+T)"
         onClick={() => onOpen()}
       >
         <Plus size={13} /> Terminal
@@ -33,7 +33,7 @@ export function NewTerminalButton({ onOpen }: { onOpen(shell?: LocalShell): void
       <button
         className="btn btn-primary rounded-l-none px-1.5"
         onClick={() => setMenuOpen((open) => !open)}
-        title="Kabuk türü seç"
+        title="Choose shell type"
       >
         <ChevronDown size={12} />
       </button>

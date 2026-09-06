@@ -42,7 +42,7 @@ export function TerminalSearch({
       <input
         ref={ref}
         className="w-48 bg-transparent font-mono text-xs outline-none placeholder:text-muted/60"
-        placeholder="ara…"
+        placeholder="search…"
         value={q}
         onChange={(e) => setQ(e.target.value)}
         onKeyDown={(e) => {
@@ -50,13 +50,13 @@ export function TerminalSearch({
           else if (e.key === 'Enter') e.shiftKey ? prev() : next()
         }}
       />
-      <button className="btn-icon h-6 w-6" title="Önceki (Shift+Enter)" onClick={prev}>
+      <button className="btn-icon h-6 w-6" title="Previous (Shift+Enter)" onClick={prev}>
         <ChevronUp size={12} />
       </button>
-      <button className="btn-icon h-6 w-6" title="Sonraki (Enter)" onClick={next}>
+      <button className="btn-icon h-6 w-6" title="Next (Enter)" onClick={next}>
         <ChevronDown size={12} />
       </button>
-      <button className="btn-icon h-6 w-6" title="Kapat (Esc)" onClick={close}>
+      <button className="btn-icon h-6 w-6" title="Close (Esc)" onClick={close}>
         <X size={12} />
       </button>
     </div>

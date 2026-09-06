@@ -21,42 +21,42 @@ export function SessionForm({ project, def }: { project: Project; def: TerminalD
   return (
     <div className="mx-auto max-w-3xl space-y-5 p-5">
       <div className="grid grid-cols-[1fr_200px] gap-4">
-        <Field label="Oturum adı">
+        <Field label="Session name">
           <TextField value={def.name} onCommit={(name) => name.trim() && patch({ name: name.trim() })} />
         </Field>
-        <Field label="Tür">
+        <Field label="Type">
           <select
             className="input"
             value={def.kind}
             onChange={(e) => patch({ kind: e.target.value as TerminalKind })}
           >
             <option value="ssh">SSH</option>
-            <option value="local">Yerel PowerShell</option>
-            <option value="web">Web adresi (tarayıcıda aç)</option>
+            <option value="local">Local PowerShell</option>
+            <option value="web">Web address (open in browser)</option>
           </select>
         </Field>
       </div>
 
       {def.kind === 'ssh' && (
         <div className="grid grid-cols-[1fr_100px_1fr] gap-4">
-          <Field label="Sunucu">
+          <Field label="Host">
             <TextField mono value={def.host ?? ''} placeholder="10.1.1.1" onCommit={(host) => patch({ host: host.trim() })} />
           </Field>
           <Field label="Port">
             <NumberField value={def.port ?? 22} min={1} onCommit={(port) => patch({ port: port || 22 })} />
           </Field>
-          <Field label="Kullanıcı">
+          <Field label="Username">
             <TextField mono value={def.username ?? ''} placeholder="root" onCommit={(username) => patch({ username: username.trim() })} />
           </Field>
         </div>
       )}
 
       {def.kind === 'web' && (
-        <Field label="Adres">
+        <Field label="Address">
           <TextField
             mono
             value={def.url ?? ''}
-            placeholder="http://10.1.1.1 veya https://cihaz.local/admin"
+            placeholder="http://10.1.1.1 or https://device.local/admin"
             onCommit={(url) => patch({ url: url.trim() })}
           />
         </Field>
@@ -70,11 +70,11 @@ export function SessionForm({ project, def }: { project: Project; def: TerminalD
 
       {def.kind !== 'web' && (
         <div>
-          <div className="label">Bağlanınca otomatik yapılacaklar</div>
+          <div className="label">Run automatically after connecting</div>
           <p className="mb-2 text-[11px] text-muted">
-            Örn. atlama sunucusundan ikinci cihaza <code className="font-mono">ssh</code>, ardından{' '}
-            <code className="font-mono">su -</code>. Şifre satırları (<code className="font-mono">{'{{secret:ad}}'}</code>)
-            şifre istemi gelince gönderilir.
+            E.g. <code className="font-mono">ssh</code> from the jump host to a second device, then{' '}
+            <code className="font-mono">su -</code>. Password lines (<code className="font-mono">{'{{secret:name}}'}</code>)
+            are sent when the password prompt appears.
           </p>
           <StepsEditor steps={def.script ?? []} project={project} onChange={(script) => patch({ script })} />
         </div>

@@ -19,9 +19,9 @@ export function AdapterList() {
     <div className="flex max-h-64 shrink-0 flex-col border-t border-border">
       <div className="section-title">
         <span className="flex items-center gap-1.5">
-          <Cable size={12} /> Adaptörler
+          <Cable size={12} /> Adapters
         </span>
-        <button className="btn-icon" title="Yenile" onClick={() => void refresh()}>
+        <button className="btn-icon" title="Refresh" onClick={() => void refresh()}>
           <RefreshCw size={12} />
         </button>
       </div>

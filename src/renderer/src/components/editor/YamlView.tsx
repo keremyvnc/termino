@@ -39,11 +39,11 @@ export function YamlView({ project, tab, visible }: { project: Project; tab: Edi
   return (
     <div className="flex h-full flex-col">
       <div className="flex h-8 shrink-0 items-center gap-2 border-b border-border bg-panel-2/40 px-3 text-[11px] text-muted">
-        <span>Ham dosya. Değişiklikler kaydedilince form görünümüne de yansır.</span>
-        {dirty && <span className="text-amber-400">● kaydedilmedi</span>}
+        <span>Raw file. Saved changes are reflected in the form view as well.</span>
+        {dirty && <span className="text-amber-400">● unsaved</span>}
         <span className="flex-1" />
-        <button className="btn py-0.5" disabled={!dirty} onClick={save} title="Kaydet (Ctrl+S)">
-          <Save size={12} /> Kaydet
+        <button className="btn py-0.5" disabled={!dirty} onClick={save} title="Save (Ctrl+S)">
+          <Save size={12} /> Save
         </button>
       </div>
       {error && (

@@ -29,7 +29,7 @@ export function NetworkPanel({ project }: { project: Project }) {
   return (
     <div className="p-3">
       <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">
-        Ağ profili
+        Network profile
       </span>
 
       <AdapterPicker
@@ -45,16 +45,16 @@ export function NetworkPanel({ project }: { project: Project }) {
           className={`btn flex-1 justify-center ${applied ? '' : 'btn-primary'}`}
           disabled={!canApply}
           onClick={() => void run('apply')}
-          title={applied ? 'Bu IP zaten adaptörde' : 'Yönetici onayı istenir'}
+          title={applied ? 'This IP is already set on the adapter' : 'Administrator approval will be requested'}
         >
           <ApplyIcon busy={busy} applied={applied} />
-          {applied ? 'Uygulandı' : 'Profili uygula'}
+          {applied ? 'Applied' : 'Apply profile'}
         </button>
         <button
           className="btn"
           disabled={!bound || Boolean(busy)}
           onClick={() => void run('dhcp')}
-          title="Adaptörü DHCP'ye al"
+          title="Switch adapter to DHCP"
         >
           {busy === 'dhcp' && <Loader2 size={12} className="animate-spin" />}
           DHCP
@@ -73,8 +73,8 @@ export function NetworkPanel({ project }: { project: Project }) {
       {result && <ResultBanner result={result} />}
 
       <p className="mt-3 text-[11px] leading-relaxed text-muted">
-        Uygulama yönetici hakkıyla çalışmaz; yalnızca IP değişikliği anında Windows UAC onayı
-        istenir. İlk uygulamadan önce adaptörün mevcut ayarı yedeklenir.
+        The app does not run with administrator rights; Windows UAC approval is requested only
+        when the IP is changed. The adapter's current settings are backed up before the first apply.
       </p>
     </div>
   )
@@ -103,10 +103,10 @@ function RestoreButton({
       className="btn mt-1.5 w-full justify-center"
       disabled={disabled}
       onClick={onClick}
-      title={`Yedek: ${new Date(backup.takenAt).toLocaleString('tr-TR')}`}
+      title={`Backup: ${new Date(backup.takenAt).toLocaleString()}`}
     >
       {busy ? <Loader2 size={12} className="animate-spin" /> : <RotateCcw size={12} />}
-      Önceki ayarı geri yükle ({summary})
+      Restore previous settings ({summary})
     </button>
   )
 }

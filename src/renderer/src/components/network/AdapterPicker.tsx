@@ -16,19 +16,19 @@ export function AdapterPicker({
 }) {
   return (
     <>
-      <label className="label mt-3">Adaptör</label>
+      <label className="label mt-3">Adapter</label>
       <select
         className="input mb-1"
         value={selectedMac ?? ''}
         onChange={(e) => onChange(e.target.value || null)}
       >
-        <option value="">— seçilmedi —</option>
+        <option value="">— not selected —</option>
         {adapters.map((a) => (
           <option key={a.mac || a.name} value={a.mac}>
             {a.name} · {a.status}
           </option>
         ))}
-        {selectedMac && !bound && <option value={selectedMac}>(bağlı değil) {selectedMac}</option>}
+        {selectedMac && !bound && <option value={selectedMac}>(not connected) {selectedMac}</option>}
       </select>
       <div className="mb-3 flex items-center gap-2 text-[11px] text-muted">
         <AdapterStatus bound={bound} selectedMac={selectedMac} />
@@ -60,9 +60,9 @@ function AdapterStatus({
     return (
       <>
         <Unplug size={12} className="shrink-0 text-amber-400" />
-        Adaptör şu an takılı değil. Takıldığında MAC ile tanınacak.
+        Adapter is not plugged in right now. It will be recognized by MAC when connected.
       </>
     )
   }
-  return <>Profili bir adaptöre bağla.</>
+  return <>Bind the profile to an adapter.</>
 }

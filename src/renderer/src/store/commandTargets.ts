@@ -39,8 +39,8 @@ export function planCommandRun(
 
   if (cmd.target) {
     const def = findTarget(project, cmd.target)
-    if (!def) throw new Error(`"${cmd.target}" adlı oturum tanımı yok.`)
-    if (def.kind === 'web') throw new Error('Web oturumunda komut çalıştırılamaz.')
+    if (!def) throw new Error(`No session definition named "${cmd.target}".`)
+    if (def.kind === 'web') throw new Error('Commands cannot run in a web session.')
     return { type: 'openDef', def, fresh: cmd.runInNewTab }
   }
 
@@ -70,6 +70,6 @@ function planSshRun(
   if (openSshTab && !cmd.runInNewTab) return { type: 'useTab', tabId: openSshTab.id }
 
   const def = project.terminals.find((d) => d.kind === 'ssh')
-  if (!def) throw new Error('Bu projede SSH oturum tanımı yok.')
+  if (!def) throw new Error('This project has no SSH session definition.')
   return { type: 'openSsh', def }
 }

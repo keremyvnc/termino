@@ -73,15 +73,15 @@ export class SshSession implements TerminalSession {
 
   private async connect(): Promise<void> {
     const ssh = this.options.ssh
-    if (!ssh) return this.fail('SSH ayarları eksik')
+    if (!ssh) return this.fail('SSH settings are missing')
 
     const password = ssh.credentialRef ? await this.secrets.get(ssh.credentialRef) : null
     if (ssh.credentialRef && password === null) {
-      return this.fail('Şifre kasada bulunamadı. Oturum tanımından şifreyi kaydet.')
+      return this.fail('Password not found in the vault. Save the password from the session definition.')
     }
 
     const port = ssh.port ?? DEFAULT_PORT
-    this.hooks.onData(ansi.dim(`${ssh.username}@${ssh.host}:${port} bağlanıyor…`))
+    this.hooks.onData(ansi.dim(`connecting to ${ssh.username}@${ssh.host}:${port}…`))
     this.reportDiagnostics(ssh.host)
 
     this.client

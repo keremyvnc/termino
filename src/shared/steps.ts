@@ -27,8 +27,8 @@ export function flattenSteps(
       continue
     }
     const cmd = findCommand(project, step.command)
-    if (!cmd) throw new Error(`"${step.command}" adlı komut yok.`)
-    if (trail.includes(cmd.id)) throw new Error(`"${cmd.name}" kendini dolaylı olarak çağırıyor.`)
+    if (!cmd) throw new Error(`No command named "${step.command}".`)
+    if (trail.includes(cmd.id)) throw new Error(`"${cmd.name}" indirectly calls itself.`)
     out.push(...flattenSteps(project, cmd.steps, [...trail, cmd.id]))
   }
   return out

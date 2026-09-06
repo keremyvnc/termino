@@ -29,7 +29,7 @@ export async function diagnoseNetwork(
   }
 
   const warnings: string[] = []
-  if (!adapters.some(isConnected)) warnings.push('Hiçbir ağ adaptörü bağlı görünmüyor.')
+  if (!adapters.some(isConnected)) warnings.push('No network adapter appears to be connected.')
 
   if (net?.adapterMac) {
     warnings.push(...checkBoundAdapter(host, net, adapters))
@@ -42,23 +42,23 @@ export async function diagnoseNetwork(
 /** Projenin profiline bagli adaptor: takili mi, IP'si var mi, profil uygulanmis mi? */
 function checkBoundAdapter(host: string, net: NetContext, adapters: AdapterInfo[]): string[] {
   const adapter = adapters.find((a) => a.mac === net.adapterMac)
-  if (!adapter) return ['Projenin ağ profiline bağlı adaptör takılı değil.']
+  if (!adapter) return ['The adapter bound to the project network profile is not plugged in.']
 
   if (adapter.status !== 'Up') {
-    const reason = adapter.status === 'Disconnected' ? 'kablo takılı değil' : adapter.status
-    return [`"${adapter.name}" adaptöründe bağlantı yok (${reason}).`]
+    const reason = adapter.status === 'Disconnected' ? 'cable not connected' : adapter.status
+    return [`Adapter "${adapter.name}" has no link (${reason}).`]
   }
 
   const warnings: string[] = []
   const ips = realIps(adapter)
   if (ips.length === 0) {
-    const cause = adapter.dhcp ? ' (DHCP cevap vermedi)' : ''
+    const cause = adapter.dhcp ? ' (DHCP did not respond)' : ''
     warnings.push(
-      `"${adapter.name}" adaptörünün IP adresi yok${cause}. Ağ sekmesinden profili uygula.`
+      `Adapter "${adapter.name}" has no IP address${cause}. Apply the profile from the Network tab.`
     )
   } else if (net.ip && !adapter.ipv4.includes(net.ip)) {
     warnings.push(
-      `Profil IP'si (${net.ip}) adaptöre uygulanmamış; adaptör şu an ${ips.join(', ')}. Ağ sekmesinden "Profili uygula".`
+      `Profile IP (${net.ip}) has not been applied to the adapter; it currently has ${ips.join(', ')}. Use "Apply profile" in the Network tab.`
     )
   }
 
@@ -68,7 +68,7 @@ function checkBoundAdapter(host: string, net: NetContext, adapters: AdapterInfo[
     looksLikeIpv4(net.ip) &&
     !sameSubnet(host, net.ip, net.prefixLength)
   if (hostOutOfSubnet) {
-    warnings.push(`Hedef ${host}, profil alt ağında (${net.ip}/${net.prefixLength}) değil.`)
+    warnings.push(`Target ${host} is not in the profile subnet (${net.ip}/${net.prefixLength}).`)
   }
   return warnings
 }
@@ -82,7 +82,7 @@ function checkAnyRoute(host: string, adapters: AdapterInfo[]): string[] {
   return reachable
     ? []
     : [
-        `Hedef ${host} ile aynı alt ağda bağlı bir adaptör görünmüyor. Ağ sekmesinden bir profil tanımlayıp uygulayabilirsin.`
+        `No connected adapter appears to be in the same subnet as target ${host}. You can define and apply a profile from the Network tab.`
       ]
 }
 
@@ -100,28 +100,28 @@ const SSH_ERROR_RULES: {
   {
     keywords: ['timed out', 'etimedout'],
     explain: (host, port) =>
-      `Cihaza ulaşılamadı: ${host}:${port} zaman aşımı. Kablo, IP ayarı veya cihazın açık olup olmadığını kontrol et.`
+      `Could not reach the device: ${host}:${port} timed out. Check the cable, the IP settings, and whether the device is powered on.`
   },
   {
     keywords: ['econnrefused'],
     explain: (host, port) =>
-      `${host} cevap verdi ama ${port} portunda SSH servisi yok (bağlantı reddedildi).`
+      `${host} responded, but there is no SSH service on port ${port} (connection refused).`
   },
   {
     keywords: ['ehostunreach', 'enetunreach'],
     explain: (host) =>
-      `${host} adresine giden bir yol yok (host unreachable). IP/alt ağ ayarını kontrol et.`
+      `There is no route to ${host} (host unreachable). Check the IP/subnet settings.`
   },
   {
     keywords: ['authentication', 'all configured authentication methods failed'],
-    explain: () => 'Kimlik doğrulama başarısız: kullanıcı adı veya şifre reddedildi.'
+    explain: () => 'Authentication failed: the username or password was rejected.'
   },
   {
     keywords: ['enotfound', 'getaddrinfo'],
-    explain: (host) => `Sunucu adı çözümlenemedi: ${host}`
+    explain: (host) => `Could not resolve host name: ${host}`
   },
   {
     keywords: ['econnreset'],
-    explain: () => 'Bağlantı karşı taraf tarafından kapatıldı (ECONNRESET).'
+    explain: () => 'The connection was closed by the remote side (ECONNRESET).'
   }
 ]

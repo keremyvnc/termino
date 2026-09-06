@@ -3,7 +3,7 @@ import { promises as fs } from 'fs'
 import type { Project } from '@shared/types'
 import { parseImportedProject, toFileName, withoutCredentials } from './projectSerialization'
 
-const FILTERS = [{ name: 'Termino projesi', extensions: ['json'] }]
+const FILTERS = [{ name: 'Termino project', extensions: ['json'] }]
 
 /** Proje dosyasi secme diyaloglari ve disk erisimi. Donusumler ayri modulde. */
 export class ProjectTransfer {
@@ -15,7 +15,7 @@ export class ProjectTransfer {
     if (!window) return false
 
     const { canceled, filePath } = await dialog.showSaveDialog(window, {
-      title: 'Projeyi dışa aktar',
+      title: 'Export project',
       defaultPath: `${toFileName(project.name)}.termino.json`,
       filters: FILTERS
     })
@@ -32,7 +32,7 @@ export class ProjectTransfer {
     if (!window) return null
 
     const { canceled, filePaths } = await dialog.showOpenDialog(window, {
-      title: 'Proje içe aktar',
+      title: 'Import project',
       filters: FILTERS,
       properties: ['openFile']
     })

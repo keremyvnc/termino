@@ -31,7 +31,7 @@ export function buildNewFile(kind: FileKind, project: Project): NewFile {
 function newSession(id: string, project: Project): TerminalDef {
   return {
     id,
-    name: uniqueName('yeni-oturum', project.terminals),
+    name: uniqueName('new-session', project.terminals),
     kind: 'ssh',
     host: project.network.ip,
     port: 22,
@@ -44,7 +44,7 @@ function newCommand(id: string, project: Project): CommandDef {
   const firstSsh = project.terminals.find((t) => t.kind === 'ssh')
   return {
     id,
-    name: uniqueName('yeni-komut', project.commands),
+    name: uniqueName('new-command', project.commands),
     target: firstSsh?.name,
     shell: firstSsh ? 'ssh' : 'powershell',
     runInNewTab: false,

@@ -45,7 +45,7 @@ export class ProjectStore {
       const project = await this.readProject(entry.name)
       if (project) projects.push(project)
     }
-    return projects.sort((a, b) => a.name.localeCompare(b.name, 'tr'))
+    return projects.sort((a, b) => a.name.localeCompare(b.name, 'en'))
   }
 
   async save(project: Project): Promise<Project> {
@@ -81,7 +81,7 @@ export class ProjectStore {
           }, WATCH_DEBOUNCE_MS)
         })
       } catch (e) {
-        console.warn('Proje dizini izlenemiyor', e)
+        console.warn('Cannot watch project directory', e)
       }
     })
   }
@@ -105,7 +105,7 @@ export class ProjectStore {
       )
       return { ...meta, terminals, commands }
     } catch (e) {
-      console.warn(`Proje okunamadi: ${id}`, e)
+      console.warn(`Could not read project: ${id}`, e)
       return null
     }
   }
@@ -128,7 +128,7 @@ export class ProjectStore {
         const text = await fs.readFile(join(folder, name), 'utf8')
         items.push(parse(text, { id: `f-${name.replace(YAML, '')}` }))
       } catch (e) {
-        console.warn(`Dosya okunamadi: ${join(folder, name)}`, e)
+        console.warn(`Could not read file: ${join(folder, name)}`, e)
       }
     }
     return items
@@ -185,15 +185,15 @@ export class ProjectStore {
         const project = legacyToProject(raw, name.replace(/\.json$/, ''))
         await this.save(project)
         await fs.rm(file, { force: true })
-        console.info(`Proje YAML yapisina tasindi: ${project.name}`)
+        console.info(`Project migrated to YAML layout: ${project.name}`)
       } catch (e) {
-        console.warn(`Eski proje tasinamadi: ${name}`, e)
+        console.warn(`Could not migrate legacy project: ${name}`, e)
       }
     }
   }
 
   private dirFor(id: string): string {
-    if (!SAFE_ID.test(id)) throw new Error('Gecersiz proje id')
+    if (!SAFE_ID.test(id)) throw new Error('Invalid project id')
     return join(this.dir, id)
   }
 
@@ -207,7 +207,7 @@ function legacyToProject(raw: Record<string, unknown>, id: string): Project {
   const commands = (Array.isArray(raw.commands) ? raw.commands : []).map(
     (c: Record<string, unknown>): CommandDef => ({
       id: String(c.id ?? newId()),
-      name: String(c.name ?? 'komut'),
+      name: String(c.name ?? 'command'),
       shell: (c.shell as CommandDef['shell']) ?? 'powershell',
       runInNewTab: Boolean(c.runInNewTab),
       steps: Array.isArray(c.steps)

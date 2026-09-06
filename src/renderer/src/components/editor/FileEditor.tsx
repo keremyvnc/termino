@@ -34,7 +34,7 @@ export function FileEditor({
   if (!def) {
     return (
       <div className="flex h-full items-center justify-center text-sm text-muted">
-        Bu dosya artık yok.
+        This file no longer exists.
       </div>
     )
   }
@@ -45,7 +45,7 @@ export function FileEditor({
   const switchMode = (next: Mode): void => {
     // YAML'da kaydedilmemis degisiklik varsa form, diskteki eski hali gosterirdi.
     if (mode === 'yaml' && next === 'form' && dirty) {
-      showToast('Önce YAML değişikliklerini kaydet (Ctrl+S) ya da geri al.')
+      showToast('Save your YAML changes first (Ctrl+S) or discard them.')
       return
     }
     setMode(next)
@@ -69,13 +69,13 @@ export function FileEditor({
         )}
         <span className="flex-1" />
         <div className="flex overflow-hidden rounded-md border border-border">
-          <ModeButton active={mode === 'form'} onClick={() => switchMode('form')} title="Anlaşılır görünüm">
-            <LayoutList size={12} /> Görünüm
+          <ModeButton active={mode === 'form'} onClick={() => switchMode('form')} title="Form view">
+            <LayoutList size={12} /> Form
           </ModeButton>
           <ModeButton
             active={mode === 'yaml'}
             onClick={() => switchMode('yaml')}
-            title={`Ham dosya: ${folderLabel(tab.kind)}/${fileNameFor(def.name)}`}
+            title={`Raw file: ${folderLabel(tab.kind)}/${fileNameFor(def.name)}`}
           >
             <Code2 size={12} /> YAML
           </ModeButton>
@@ -124,8 +124,8 @@ function ModeButton({
 }
 
 function runLabel(session: TerminalDef | undefined, kind: EditorTab['kind']): string {
-  if (kind !== 'session') return 'Çalıştır'
-  return session?.kind === 'web' ? 'Tarayıcıda aç' : 'Bağlan'
+  if (kind !== 'session') return 'Run'
+  return session?.kind === 'web' ? 'Open in browser' : 'Connect'
 }
 
 /** Proje en guncel haliyle store'dan okunur; form degisiklikleri aninda gecerli olsun. */
@@ -133,7 +133,7 @@ async function runLatest(projectId: string, tab: EditorTab): Promise<void> {
   const project = useAppStore.getState().projects.find((p) => p.id === projectId)
   if (!project) return
   const def = findDef(project, tab)
-  if (!def) throw new Error('Bu dosya artık yok.')
+  if (!def) throw new Error('This file no longer exists.')
 
   const terminals = useTerminalStore.getState()
   if (tab.kind === 'session') await terminals.openDef(project, def as TerminalDef)

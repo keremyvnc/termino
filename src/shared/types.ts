@@ -94,7 +94,7 @@ export function newProject(partial: Partial<Project> = {}): Project {
   const now = new Date().toISOString()
   return {
     id: partial.id ?? newId(),
-    name: partial.name ?? 'Yeni Proje',
+    name: partial.name ?? 'New Project',
     description: partial.description ?? '',
     color: partial.color ?? PROJECT_COLORS[Math.floor(Math.random() * PROJECT_COLORS.length)],
     commands: partial.commands ?? [],

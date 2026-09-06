@@ -83,12 +83,12 @@ function EmptyArea({ onOpen }: { onOpen(): void }) {
     <div className="flex h-full items-center justify-center font-mono text-sm text-muted">
       <div className="text-center">
         <TerminalIcon size={36} className="mx-auto mb-3 opacity-40" />
-        <p>Soldaki ağaçtan bir oturum ya da komut dosyası seç.</p>
+        <p>Pick a session or command file from the tree on the left.</p>
         <button className="btn btn-primary mt-4" onClick={onOpen}>
-          <Plus size={12} /> PowerShell aç
+          <Plus size={12} /> Open PowerShell
         </button>
         <p className="mt-3 text-xs opacity-60">
-          ▶ çalıştırır · çift tık da çalıştırır · Ctrl+S kaydeder · Ctrl+K palet · Alt+1..9 sekme
+          ▶ runs · double-click also runs · Ctrl+S saves · Ctrl+K palette · Alt+1..9 tabs
         </p>
       </div>
     </div>

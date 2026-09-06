@@ -78,7 +78,7 @@ function Tab({
           e.stopPropagation()
           onClose()
         }}
-        title="Kapat (Ctrl+Shift+W)"
+        title="Close (Ctrl+Shift+W)"
       >
         <X size={11} />
       </button>

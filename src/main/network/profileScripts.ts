@@ -10,7 +10,7 @@ import { psQuote } from './powershell'
 export function adapterLookup(mac: string): string {
   return [
     `$a = Get-NetAdapter | Where-Object MacAddress -eq '${psQuote(mac)}' | Select-Object -First 1`,
-    `if (-not $a) { throw 'Adaptör bulunamadı: ${psQuote(mac)}' }`,
+    `if (-not $a) { throw 'Adapter not found: ${psQuote(mac)}' }`,
     '$idx = $a.ifIndex'
   ].join('\n')
 }

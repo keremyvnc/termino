@@ -73,12 +73,12 @@ export class ScriptRunner {
         previousStepWaited = await this.runStep(step, previousStepWaited)
       } catch (e) {
         this.target.note(
-          `senaryo adım ${index + 1} (${step.type}) başarısız: ${(e as Error).message}`
+          `script step ${index + 1} (${step.type}) failed: ${(e as Error).message}`
         )
         return
       }
     }
-    if (steps.length) this.target.note('senaryo tamamlandı')
+    if (steps.length) this.target.note('script completed')
   }
 
   /** Adimi calistirir ve "bu adim ciktiyi bekledi mi" bilgisini dondurur. */
@@ -99,7 +99,7 @@ export class ScriptRunner {
         return false
       case 'run':
         // Renderer `flattenSteps` ile cozer; buraya gelmesi bir hatadir.
-        throw new Error(`"${step.command}" komut çağrısı çözümlenmemiş`)
+        throw new Error(`command call "${step.command}" was not resolved`)
     }
   }
 
@@ -110,7 +110,7 @@ export class ScriptRunner {
         await this.waitForPattern(
           PASSWORD_PROMPT,
           PASSWORD_PROMPT_TIMEOUT,
-          'şifre istemi (password:)'
+          'password prompt (password:)'
         )
       } else {
         await this.settle()
@@ -148,7 +148,7 @@ export class ScriptRunner {
     return new Promise<void>((resolve, reject) => {
       const timer = setTimeout(() => {
         if (this.waiter?.resolve === done) this.waiter = null
-        reject(new Error(`${label} ${timeoutMs} ms içinde gelmedi`))
+        reject(new Error(`${label} did not arrive within ${timeoutMs} ms`))
       }, timeoutMs)
       const done = (): void => {
         clearTimeout(timer)

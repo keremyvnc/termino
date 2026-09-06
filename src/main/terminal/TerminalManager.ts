@@ -38,10 +38,10 @@ export class TerminalManager {
 
   create(options: TermCreateOptions): string {
     const id = options.id
-    if (this.sessions.has(id)) throw new Error(`Terminal zaten var: ${id}`)
+    if (this.sessions.has(id)) throw new Error(`Terminal already exists: ${id}`)
 
     const factory = this.factories.get(options.kind)
-    if (!factory) throw new Error(`Desteklenmeyen terminal türü: ${options.kind}`)
+    if (!factory) throw new Error(`Unsupported terminal type: ${options.kind}`)
 
     this.sessions.set(id, factory({ id, options, hooks: this.hooksFor(id), secrets: this.secrets }))
     return id
@@ -63,7 +63,7 @@ export class TerminalManager {
   /** Komut dosyasinin adimlarini acik bir oturumda calistirir. */
   async runScript(id: string, steps: ScriptStep[]): Promise<void> {
     const session = this.sessions.get(id)
-    if (!session) throw new Error('Oturum açık değil')
+    if (!session) throw new Error('Session is not open')
     await session.runScript(steps)
   }
 

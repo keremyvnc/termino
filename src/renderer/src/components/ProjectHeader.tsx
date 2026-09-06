@@ -32,19 +32,19 @@ export function ProjectHeader({ project }: { project: Project }) {
         className="min-w-0 flex-1 bg-transparent text-base font-semibold outline-none"
         value={project.name}
         onChange={(e) => void updateProject({ id: project.id, name: e.target.value })}
-        placeholder="Proje adı"
+        placeholder="Project name"
       />
       <input
         className="w-72 bg-transparent text-xs text-muted outline-none placeholder:text-muted/50"
         value={project.description}
         onChange={(e) => void updateProject({ id: project.id, description: e.target.value })}
-        placeholder="Açıklama…"
+        placeholder="Description…"
       />
       <button
         className="btn-icon"
-        title="Projeyi dışa aktar (şifreler dahil edilmez)"
+        title="Export project (passwords are not included)"
         onClick={() =>
-          void window.api.app.exportProject(project).then((ok) => ok && showToast('Proje dışa aktarıldı.'))
+          void window.api.app.exportProject(project).then((ok) => ok && showToast('Project exported.'))
         }
       >
         <Download size={14} />
@@ -55,14 +55,14 @@ export function ProjectHeader({ project }: { project: Project }) {
             className="btn btn-danger"
             onClick={() => void removeProject(project.id).then(() => setConfirm(false))}
           >
-            Sil
+            Delete
           </button>
           <button className="btn" onClick={() => setConfirm(false)}>
-            Vazgeç
+            Cancel
           </button>
         </div>
       ) : (
-        <button className="btn-icon" title="Projeyi sil" onClick={() => setConfirm(true)}>
+        <button className="btn-icon" title="Delete project" onClick={() => setConfirm(true)}>
           <Trash2 size={14} />
         </button>
       )}

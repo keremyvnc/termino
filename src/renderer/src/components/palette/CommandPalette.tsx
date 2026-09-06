@@ -60,7 +60,7 @@ export function CommandPalette({ project, onClose }: { project: Project; onClose
         <input
           ref={inputRef}
           className="w-full border-b border-border bg-transparent px-4 py-3 text-sm outline-none placeholder:text-muted/60"
-          placeholder="Komut, oturum veya eylem ara…"
+          placeholder="Search commands, sessions or actions…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={onKeyDown}
@@ -68,7 +68,7 @@ export function CommandPalette({ project, onClose }: { project: Project; onClose
 
         <ul className="max-h-80 overflow-y-auto p-1">
           {items.length === 0 && (
-            <li className="px-3 py-6 text-center text-xs text-muted">Eşleşen bir şey yok</li>
+            <li className="px-3 py-6 text-center text-xs text-muted">No matches</li>
           )}
           {items.map((item, index) => (
             <li key={item.id}>
@@ -83,9 +83,9 @@ export function CommandPalette({ project, onClose }: { project: Project; onClose
         </ul>
 
         <div className="flex gap-3 border-t border-border px-3 py-1.5 text-[10px] text-muted">
-          <span>↑↓ seç</span>
-          <span>Enter çalıştır</span>
-          <span>Esc kapat</span>
+          <span>↑↓ select</span>
+          <span>Enter run</span>
+          <span>Esc close</span>
         </div>
       </div>
     </div>

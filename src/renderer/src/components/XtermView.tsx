@@ -93,7 +93,7 @@ export function XtermView({ tab, visible }: { tab: TermTab; visible: boolean }) 
     })
     const offExit = window.api.term.onExit((info) => {
       if (info.id !== tab.id) return
-      term.write(`\r\n\x1b[90m[oturum kapandı, kod ${info.exitCode}]\x1b[0m\r\n`)
+      term.write(`\r\n\x1b[90m[session closed, exit code ${info.exitCode}]\x1b[0m\r\n`)
       markExited(tab.id, info.exitCode)
     })
 
@@ -103,7 +103,7 @@ export function XtermView({ tab, visible }: { tab: TermTab; visible: boolean }) 
         created = true
         markRunning(tab.id)
       })
-      .catch((e) => term.write(`\x1b[31mTerminal açılamadı: ${String(e)}\x1b[0m\r\n`))
+      .catch((e) => term.write(`\x1b[31mCould not open terminal: ${String(e)}\x1b[0m\r\n`))
 
     const onInput = term.onData((d) => window.api.term.write(tab.id, d))
     const onResize = term.onResize(({ cols, rows }) => window.api.term.resize(tab.id, cols, rows))
