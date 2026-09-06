@@ -11,7 +11,8 @@ export function TextField({
   mono = false,
   placeholder,
   type = 'text',
-  autoFocus
+  autoFocus,
+  id
 }: {
   value: string
   onCommit(value: string): void
@@ -20,6 +21,7 @@ export function TextField({
   placeholder?: string
   type?: 'text' | 'number'
   autoFocus?: boolean
+  id?: string
 }) {
   const [draft, setDraft] = useState(value)
   useEffect(() => setDraft(value), [value])
@@ -30,6 +32,7 @@ export function TextField({
 
   return (
     <input
+      id={id}
       className={`input ${mono ? 'font-mono' : ''} ${className}`}
       type={type}
       value={draft}
@@ -68,11 +71,39 @@ export function NumberField({
   )
 }
 
-export function Field({ label, children }: { label: string; children: React.ReactNode }) {
+export function Field({
+  label,
+  hint,
+  children
+}: {
+  label: string
+  hint?: string
+  children: React.ReactNode
+}) {
   return (
     <div>
       <label className="label">{label}</label>
       {children}
+      {hint && <p className="mt-1 text-[11px] text-muted/80">{hint}</p>}
     </div>
+  )
+}
+
+/** Formdaki bir bolum: baslik, kisa aciklama ve icerik. */
+export function FormSection({
+  title,
+  description,
+  children
+}: {
+  title: string
+  description?: string
+  children: React.ReactNode
+}) {
+  return (
+    <section className="card p-4">
+      <h3 className="card-title">{title}</h3>
+      {description && <p className="mt-1 text-[11px] leading-relaxed text-muted/80">{description}</p>}
+      <div className="mt-3 space-y-3">{children}</div>
+    </section>
   )
 }

@@ -45,38 +45,38 @@ export function FileEditor({
   const switchMode = (next: Mode): void => {
     // YAML'da kaydedilmemis degisiklik varsa form, diskteki eski hali gosterirdi.
     if (mode === 'yaml' && next === 'form' && dirty) {
-      showToast('Save your YAML changes first (Ctrl+S) or discard them.')
+      showToast('Save your YAML changes first (Ctrl+S) or discard them.', 'error')
       return
     }
     setMode(next)
   }
 
   const run = (): void => {
-    runLatest(project.id, tab).catch((e) => showToast(String((e as Error).message ?? e)))
+    runLatest(project.id, tab).catch((e) => showToast(String((e as Error).message ?? e), 'error'))
   }
 
   const Icon = session ? (session.kind === 'ssh' ? Server : session.kind === 'web' ? Globe : Terminal) : FileCode2
+  const fileName = `${folderLabel(tab.kind)}/${fileNameFor(def.name)}`
 
   return (
     <div className="flex h-full flex-col" style={{ display: visible ? 'flex' : 'none' }}>
-      <div className="flex h-10 shrink-0 items-center gap-3 border-b border-border bg-panel px-4 text-xs">
-        <Icon size={14} className={session ? 'text-accent' : 'text-amber-300'} />
-        <span className="text-sm font-semibold">{def.name}</span>
-        {command && (
-          <span className="rounded bg-panel-2 px-1.5 py-0.5 text-[11px] text-muted">
-            {targetLabel(command, project)}
-          </span>
-        )}
+      <div className="flex h-11 shrink-0 items-center gap-3 border-b border-border bg-panel px-4 text-xs">
+        <span className={`flex h-6 w-6 items-center justify-center rounded-md ${session ? 'bg-accent/10 text-accent' : 'bg-warn/10 text-warn'}`}>
+          <Icon size={13} />
+        </span>
+        <div className="min-w-0">
+          <div className="truncate text-sm font-semibold">{def.name}</div>
+          <div className="truncate font-mono text-[11px] text-muted">
+            {fileName}
+            {command && <span className="font-sans"> · runs in {targetLabel(command, project)}</span>}
+          </div>
+        </div>
         <span className="flex-1" />
-        <div className="flex overflow-hidden rounded-md border border-border">
-          <ModeButton active={mode === 'form'} onClick={() => switchMode('form')} title="Form view">
+        <div className="flex h-7 overflow-hidden rounded-md border border-border" role="tablist">
+          <ModeButton active={mode === 'form'} onClick={() => switchMode('form')} title="Edit with a form">
             <LayoutList size={12} /> Form
           </ModeButton>
-          <ModeButton
-            active={mode === 'yaml'}
-            onClick={() => switchMode('yaml')}
-            title={`Raw file: ${folderLabel(tab.kind)}/${fileNameFor(def.name)}`}
-          >
+          <ModeButton active={mode === 'yaml'} onClick={() => switchMode('yaml')} title="Edit the raw YAML file">
             <Code2 size={12} /> YAML
           </ModeButton>
         </div>
@@ -112,8 +112,10 @@ function ModeButton({
 }) {
   return (
     <button
-      className={`flex items-center gap-1 px-2 py-1 text-[11px] ${
-        active ? 'bg-panel-2 text-fg' : 'text-muted hover:text-fg'
+      role="tab"
+      aria-selected={active}
+      className={`flex items-center gap-1 px-2.5 text-[11px] transition-colors ${
+        active ? 'bg-panel-3 text-fg' : 'text-muted hover:bg-panel-2 hover:text-fg'
       }`}
       onClick={onClick}
       title={title}

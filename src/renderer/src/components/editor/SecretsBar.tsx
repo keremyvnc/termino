@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { KeyRound, Plus, X } from 'lucide-react'
+import { Check, KeyRound, Plus, X } from 'lucide-react'
 import type { Project, TerminalDef } from '@shared/types'
 import { useSessionSecrets } from './useSessionSecrets'
 
-/** SSH oturumunun sifre cubugu. Kasa islemleri `useSessionSecrets` icindedir. */
+/** SSH oturumunun sifre alani. Kasa islemleri `useSessionSecrets` icindedir. */
 export function SecretsBar({ def, project }: { def: TerminalDef; project: Project }) {
   const { hasPassword, savePassword, addSecret, removeSecret } = useSessionSecrets(project, def)
   const [password, setPassword] = useState('')
@@ -18,73 +18,89 @@ export function SecretsBar({ def, project }: { def: TerminalDef; project: Projec
   }
 
   return (
-    <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-border bg-panel-2/60 px-3 py-1.5 text-xs">
-      <KeyRound size={12} className={hasPassword ? 'text-emerald-400' : 'text-muted'} />
-      <span className="text-muted">Connection password{hasPassword ? ' · in vault' : ''}:</span>
-      <input
-        className="input w-44 py-0.5 font-mono text-xs"
-        type="password"
-        value={password}
-        placeholder={hasPassword ? 'type to change' : 'password'}
-        autoComplete="off"
-        onChange={(e) => setPassword(e.target.value)}
-        onKeyDown={(e) => e.key === 'Enter' && void submitPassword()}
-      />
-      {password && (
-        <button className="btn btn-primary py-0.5" onClick={() => void submitPassword()}>
-          Save
-        </button>
-      )}
-
-      <span className="mx-1 h-4 border-l border-border" />
-      <span className="text-muted">Extra secrets:</span>
-      {(def.secrets ?? []).map((name) => (
-        <span key={name} className="flex items-center gap-1 rounded bg-bg px-1.5 py-0.5 font-mono">
-          {`{{secret:${name}}}`}
-          <button
-            className="text-muted hover:text-red-300"
-            title="Remove"
-            onClick={() => void removeSecret(name)}
-          >
-            <X size={10} />
-          </button>
-        </span>
-      ))}
-
-      {adding ? (
-        <>
+    <div className="space-y-3">
+      <div>
+        <label className="label flex items-center gap-1.5" htmlFor="ssh-password">
+          Login password
+          {hasPassword ? (
+            <span className="chip chip-success normal-case tracking-normal">
+              <Check size={10} /> saved in vault
+            </span>
+          ) : (
+            <span className="chip chip-warn normal-case tracking-normal">not saved</span>
+          )}
+        </label>
+        <div className="flex gap-2">
           <input
-            className="input w-24 py-0.5 font-mono text-xs"
-            placeholder="name"
-            autoFocus
-            value={adding.name}
-            onChange={(e) => setAdding({ ...adding, name: e.target.value })}
-          />
-          <input
-            className="input w-36 py-0.5 font-mono text-xs"
+            id="ssh-password"
+            className="input max-w-xs font-mono"
             type="password"
-            placeholder="password"
+            value={password}
+            placeholder={hasPassword ? 'Type a new password to replace it' : 'Password for the SSH login'}
             autoComplete="off"
-            value={adding.value}
-            onChange={(e) => setAdding({ ...adding, value: e.target.value })}
-            onKeyDown={(e) => e.key === 'Enter' && void submitSecret()}
+            onChange={(e) => setPassword(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && void submitPassword()}
           />
-          <button className="btn btn-primary py-0.5" onClick={() => void submitSecret()}>
-            Add
+          <button className="btn btn-primary h-8" disabled={!password} onClick={() => void submitPassword()}>
+            <KeyRound size={12} /> Save
           </button>
-          <button className="btn-icon h-6 w-6" onClick={() => setAdding(null)}>
-            <X size={12} />
-          </button>
-        </>
-      ) : (
-        <button
-          className="btn-icon h-6 w-6"
-          title="Add an extra secret (su, second device…)"
-          onClick={() => setAdding({ name: '', value: '' })}
-        >
-          <Plus size={12} />
-        </button>
-      )}
+        </div>
+      </div>
+
+      <div>
+        <div className="label">Extra secrets</div>
+        <div className="flex flex-wrap items-center gap-1.5">
+          {(def.secrets ?? []).length === 0 && !adding && (
+            <span className="text-[11px] text-muted/80">None yet — e.g. a su or second-device password.</span>
+          )}
+          {(def.secrets ?? []).map((name) => (
+            <span key={name} className="chip chip-muted h-6 gap-1.5 font-mono">
+              {`{{secret:${name}}}`}
+              <button
+                className="text-muted hover:text-danger"
+                title={`Remove secret "${name}"`}
+                onClick={() => void removeSecret(name)}
+              >
+                <X size={11} />
+              </button>
+            </span>
+          ))}
+
+          {adding ? (
+            <span className="flex items-center gap-1.5">
+              <input
+                className="input input-sm w-28 font-mono"
+                placeholder="name (e.g. su)"
+                autoFocus
+                value={adding.name}
+                onChange={(e) => setAdding({ ...adding, name: e.target.value })}
+              />
+              <input
+                className="input input-sm w-40 font-mono"
+                type="password"
+                placeholder="value"
+                autoComplete="off"
+                value={adding.value}
+                onChange={(e) => setAdding({ ...adding, value: e.target.value })}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') void submitSecret()
+                  if (e.key === 'Escape') setAdding(null)
+                }}
+              />
+              <button className="btn btn-primary" disabled={!adding.name || !adding.value} onClick={() => void submitSecret()}>
+                Add
+              </button>
+              <button className="btn-icon btn-icon-sm" title="Cancel" onClick={() => setAdding(null)}>
+                <X size={12} />
+              </button>
+            </span>
+          ) : (
+            <button className="btn" onClick={() => setAdding({ name: '', value: '' })}>
+              <Plus size={12} /> Add secret
+            </button>
+          )}
+        </div>
+      </div>
     </div>
   )
 }

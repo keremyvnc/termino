@@ -1,9 +1,7 @@
-import { FolderOpen, Import, Plus } from 'lucide-react'
+import { Import, Plus } from 'lucide-react'
 import { useAppStore } from '../../store/useAppStore'
 import { AdapterList } from '../AdapterList'
 import { ProjectNode } from './ProjectNode'
-
-const VERSION = 'v0.1.0'
 
 /**
  * VS Code Explorer benzeri agac: proje > sessions/ > *.yaml, commands/ > *.yaml.
@@ -21,7 +19,7 @@ export function Sidebar() {
       <div className="section-title">
         <span>Projects</span>
         <span className="flex items-center">
-          <button className="btn-icon" title="Import project" onClick={() => void importProject()}>
+          <button className="btn-icon" title="Import a project from a JSON file" onClick={() => void importProject()}>
             <Import size={13} />
           </button>
           <button className="btn-icon" title="New project" onClick={openNewProject}>
@@ -32,7 +30,13 @@ export function Sidebar() {
 
       <ul className="min-h-0 flex-1 overflow-y-auto px-1.5 pb-2">
         {projects.length === 0 && (
-          <li className="px-2 py-6 text-center text-xs text-muted">No projects yet</li>
+          <li className="px-2 py-6 text-center text-xs text-muted">
+            No projects yet.
+            <br />
+            <button className="mt-2 text-accent hover:underline" onClick={openNewProject}>
+              Create one
+            </button>
+          </li>
         )}
         {projects.map((project) => (
           <ProjectNode
@@ -45,22 +49,6 @@ export function Sidebar() {
       </ul>
 
       <AdapterList />
-      <SidebarFooter />
     </aside>
-  )
-}
-
-function SidebarFooter() {
-  return (
-    <footer className="flex shrink-0 items-center justify-between border-t border-border px-3 py-2 text-[11px] text-muted">
-      <span>{VERSION}</span>
-      <button
-        className="flex items-center gap-1 hover:text-fg"
-        title="Open data folder (YAML files)"
-        onClick={() => void window.api.app.openDataDir()}
-      >
-        <FolderOpen size={12} /> files
-      </button>
-    </footer>
   )
 }

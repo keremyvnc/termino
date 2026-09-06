@@ -60,7 +60,19 @@ export function XtermView({ tab, visible }: { tab: TermTab; visible: boolean }) 
     const searchAddon = new SearchAddon()
     term.loadAddon(searchAddon)
     searchRef.current = searchAddon
-    // Ctrl+F arama cubugu; Ctrl+Shift+C/V kopyala-yapistir
+    /** Secili metni panoya kopyalar; kopyalanan bir sey varsa true doner. */
+    const copySelection = (): boolean => {
+      const sel = term.getSelection()
+      if (!sel) return false
+      void navigator.clipboard.writeText(sel)
+      term.clearSelection()
+      return true
+    }
+    const paste = (): void => {
+      void navigator.clipboard.readText().then((t) => t && window.api.term.write(tab.id, t))
+    }
+
+    // Ctrl+F arama cubugu; Ctrl+C secim varsa kopyalar (yoksa ^C gonderir), Ctrl+V yapistirir.
     term.attachCustomKeyEventHandler((ev) => {
       if (ev.type !== 'keydown') return true
       // Uygulama kisayollari: xterm islemesin, pencereye kabarsin.
@@ -71,23 +83,28 @@ export function XtermView({ tab, visible }: { tab: TermTab; visible: boolean }) 
         setSearch(true)
         return false
       }
-      if (ev.ctrlKey && ev.shiftKey && ev.key.toLowerCase() === 'c') {
-        const sel = term.getSelection()
-        if (sel) void navigator.clipboard.writeText(sel)
-        return false
+      // Windows Terminal davranisi: secim varken Ctrl+C kopyalar, yokken programi keser.
+      if (ev.ctrlKey && !ev.altKey && ev.key.toLowerCase() === 'c') {
+        if (copySelection()) return false
+        return !ev.shiftKey
       }
-      if (ev.ctrlKey && ev.shiftKey && ev.key.toLowerCase() === 'v') {
-        void navigator.clipboard.readText().then((t) => t && window.api.term.write(tab.id, t))
+      if (ev.ctrlKey && !ev.altKey && ev.key.toLowerCase() === 'v') {
+        paste()
         return false
       }
       return true
     })
+    // Sag tik: secim varsa kopyala, yoksa yapistir.
+    const onContextMenu = (e: MouseEvent): void => {
+      e.preventDefault()
+      if (!copySelection()) paste()
+    }
+    host.addEventListener('contextmenu', onContextMenu)
     term.open(host)
     fit.fit()
     termRef.current = term
     fitRef.current = fit
 
-    let created = false
     const offData = window.api.term.onData((id, data) => {
       if (id === tab.id) term.write(data)
     })
@@ -99,10 +116,7 @@ export function XtermView({ tab, visible }: { tab: TermTab; visible: boolean }) 
 
     void window.api.term
       .create({ ...tab.createOpts, id: tab.id, cols: term.cols, rows: term.rows })
-      .then(() => {
-        created = true
-        markRunning(tab.id)
-      })
+      .then(() => markRunning(tab.id))
       .catch((e) => term.write(`\x1b[31mCould not open terminal: ${String(e)}\x1b[0m\r\n`))
 
     const onInput = term.onData((d) => window.api.term.write(tab.id, d))
@@ -120,12 +134,14 @@ export function XtermView({ tab, visible }: { tab: TermTab; visible: boolean }) 
     ro.observe(host)
 
     return () => {
+      host.removeEventListener('contextmenu', onContextMenu)
       ro.disconnect()
       onInput.dispose()
       onResize.dispose()
       offData()
       offExit()
-      if (created) window.api.term.kill(tab.id)
+      // PTY'nin omru store'a aittir (`useTerminalStore.close` oldurur). Bilesen
+      // yalnizca gorunumu birakir; boylece yeniden baglanma oturumu kapatmaz.
       term.dispose()
     }
     // tab.id sabit; yeniden olusturma istemiyoruz.

@@ -4,10 +4,15 @@
   --color-bg: #0b0f14;
   --color-panel: #111821;
   --color-panel-2: #161f2a;
+  --color-panel-3: #1c2734;
   --color-border: #1f2a37;
+  --color-border-strong: #2c3a4b;
   --color-fg: #e5e7eb;
   --color-muted: #8b95a5;
   --color-accent: #38bdf8;
+  --color-success: #34d399;
+  --color-warn: #fbbf24;
+  --color-danger: #f87171;
   --font-mono: 'Cascadia Code', 'JetBrains Mono', Consolas, monospace;
   --font-sans: 'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif;
 }
@@ -31,6 +36,17 @@ select {
   user-select: text;
 }
 
+/* Klavye ile gezinirken odak her yerde ayni sekilde gorunur. */
+:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--color-accent) 70%, transparent);
+  outline-offset: 1px;
+}
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none;
+}
+
 .drag {
   -webkit-app-region: drag;
 }
@@ -46,28 +62,112 @@ select {
   background: #2a3543;
   border-radius: 4px;
 }
+::-webkit-scrollbar-thumb:hover {
+  background: #36445a;
+}
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 
+/* --- Temel bilesen stilleri (utilities katmani bunlari ezebilsin diye components katmaninda) --- */
+@layer components {
+
 .input {
-  @apply w-full rounded-md border border-border bg-bg px-2.5 py-1.5 text-sm text-fg outline-none placeholder:text-muted/60 focus:border-accent/60;
+  @apply h-8 w-full rounded-md border border-border bg-bg px-2.5 text-sm text-fg outline-none placeholder:text-muted/60 focus:border-accent/70 focus:ring-2 focus:ring-accent/20;
 }
+.input-sm {
+  @apply h-7 text-xs;
+}
+.input-invalid {
+  @apply border-danger/60 focus:border-danger focus:ring-danger/20;
+}
+
 .btn {
-  @apply inline-flex items-center gap-1.5 rounded-md border border-border bg-panel-2 px-2.5 py-1.5 text-xs font-medium text-fg hover:bg-border/60 disabled:opacity-40 disabled:hover:bg-panel-2;
+  @apply inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-border bg-panel-2 px-2.5 text-xs font-medium text-fg transition-colors hover:border-border-strong hover:bg-panel-3 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-border disabled:hover:bg-panel-2;
+}
+.btn-lg {
+  @apply h-9 px-4 text-sm;
 }
 .btn-primary {
-  @apply border-accent/40 bg-accent/15 text-accent hover:bg-accent/25;
+  @apply border-accent/40 bg-accent/15 text-accent hover:border-accent/60 hover:bg-accent/25;
+}
+.btn-success {
+  @apply border-success/40 bg-success/15 text-success hover:border-success/60 hover:bg-success/25;
 }
 .btn-danger {
-  @apply border-red-500/30 bg-red-500/10 text-red-300 hover:bg-red-500/20;
+  @apply border-danger/30 bg-danger/10 text-danger hover:border-danger/50 hover:bg-danger/20;
+}
+.btn-ghost {
+  @apply border-transparent bg-transparent text-muted hover:border-transparent hover:bg-panel-3 hover:text-fg;
 }
 .btn-icon {
-  @apply inline-flex h-7 w-7 items-center justify-center rounded-md text-muted hover:bg-border/60 hover:text-fg;
+  @apply inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted transition-colors hover:bg-panel-3 hover:text-fg disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent;
 }
+.btn-icon-sm {
+  @apply h-6 w-6;
+}
+
 .label {
   @apply mb-1 block text-[11px] font-medium uppercase tracking-wide text-muted;
 }
 .section-title {
-  @apply flex items-center justify-between px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-muted;
+  @apply flex h-9 items-center justify-between px-3 text-[11px] font-semibold uppercase tracking-wider text-muted;
+}
+
+.card {
+  @apply rounded-lg border border-border bg-panel;
+}
+.card-title {
+  @apply flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted;
+}
+
+.chip {
+  @apply inline-flex h-5 items-center gap-1 rounded px-1.5 text-[11px] font-medium;
+}
+.chip-muted {
+  @apply bg-panel-3 text-muted;
+}
+.chip-success {
+  @apply bg-success/15 text-success;
+}
+.chip-warn {
+  @apply bg-warn/15 text-warn;
+}
+.chip-danger {
+  @apply bg-danger/15 text-danger;
+}
+.chip-accent {
+  @apply bg-accent/15 text-accent;
+}
+
+.kbd {
+  @apply inline-flex h-[18px] items-center rounded border border-border-strong bg-panel-2 px-1 font-mono text-[10px] text-muted;
+}
+
+/* Agac satirlari */
+.tree-row {
+  @apply flex h-7 cursor-pointer items-center gap-1.5 rounded-md pr-1 text-xs text-muted transition-colors hover:bg-panel-2 hover:text-fg;
+}
+.tree-row-active {
+  @apply bg-panel-3 text-fg;
+}
+
+.dot {
+  @apply inline-block h-2 w-2 shrink-0 rounded-full;
+}
+
+}
+
+.fade-in {
+  animation: fade-in 150ms ease-out;
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }

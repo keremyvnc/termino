@@ -27,63 +27,75 @@ export function NetworkPanel({ project }: { project: Project }) {
   }
 
   return (
-    <div className="p-3">
-      <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">
-        Network profile
-      </span>
-
-      <AdapterPicker
-        adapters={adapters}
-        selectedMac={profile.adapterMac}
-        bound={bound}
-        onChange={(adapterMac) => patch({ adapterMac })}
-      />
-      <ProfileFields profile={profile} validity={validity} onChange={patch} />
-
-      <div className="flex gap-1.5">
-        <button
-          className={`btn flex-1 justify-center ${applied ? '' : 'btn-primary'}`}
-          disabled={!canApply}
-          onClick={() => void run('apply')}
-          title={applied ? 'This IP is already set on the adapter' : 'Administrator approval will be requested'}
-        >
-          <ApplyIcon busy={busy} applied={applied} />
-          {applied ? 'Applied' : 'Apply profile'}
-        </button>
-        <button
-          className="btn"
-          disabled={!bound || Boolean(busy)}
-          onClick={() => void run('dhcp')}
-          title="Switch adapter to DHCP"
-        >
-          {busy === 'dhcp' && <Loader2 size={12} className="animate-spin" />}
-          DHCP
-        </button>
-      </div>
-
-      {backup && (
-        <RestoreButton
-          backup={backup}
-          disabled={!bound || Boolean(busy)}
-          busy={busy === 'restore'}
-          onClick={() => void run('restore')}
+    <div className="flex flex-col gap-4 p-3">
+      <section>
+        <h3 className="card-title mb-2">1 · Adapter</h3>
+        <AdapterPicker
+          adapters={adapters}
+          selectedMac={profile.adapterMac}
+          bound={bound}
+          onChange={(adapterMac) => patch({ adapterMac })}
         />
-      )}
+      </section>
 
-      {result && <ResultBanner result={result} />}
+      <section>
+        <h3 className="card-title mb-2">2 · Address</h3>
+        <ProfileFields profile={profile} validity={validity} onChange={patch} />
+      </section>
 
-      <p className="mt-3 text-[11px] leading-relaxed text-muted">
-        The app does not run with administrator rights; Windows UAC approval is requested only
-        when the IP is changed. The adapter's current settings are backed up before the first apply.
-      </p>
+      <section>
+        <h3 className="card-title mb-2">3 · Apply</h3>
+        <div className="flex gap-1.5">
+          <button
+            className={`btn h-8 flex-1 justify-center ${applied ? 'btn-success' : 'btn-primary'}`}
+            disabled={!canApply}
+            onClick={() => void run('apply')}
+            title={
+              !bound
+                ? 'Select a connected adapter first'
+                : applied
+                  ? 'This IP is already set on the adapter'
+                  : 'Windows will ask for administrator approval'
+            }
+          >
+            <ApplyIcon busy={busy} applied={applied} />
+            {applied ? 'Applied' : 'Apply profile'}
+          </button>
+          <button
+            className="btn h-8"
+            disabled={!bound || Boolean(busy)}
+            onClick={() => void run('dhcp')}
+            title="Switch the adapter back to DHCP"
+          >
+            {busy === 'dhcp' && <Loader2 size={12} className="animate-spin" />}
+            DHCP
+          </button>
+        </div>
+
+        {backup && (
+          <RestoreButton
+            backup={backup}
+            disabled={!bound || Boolean(busy)}
+            busy={busy === 'restore'}
+            onClick={() => void run('restore')}
+          />
+        )}
+
+        {result && <ResultBanner result={result} />}
+
+        <p className="mt-3 text-[11px] leading-relaxed text-muted/80">
+          Only the IP change asks for UAC approval; the app itself does not run elevated. The
+          adapter's current settings are backed up before the first apply.
+        </p>
+      </section>
     </div>
   )
 }
 
 function ApplyIcon({ busy, applied }: { busy: NetworkOperation | null; applied: boolean }) {
-  if (busy === 'apply') return <Loader2 size={12} className="animate-spin" />
-  if (applied) return <Check size={12} className="text-emerald-400" />
-  return <Zap size={12} />
+  if (busy === 'apply') return <Loader2 size={13} className="animate-spin" />
+  if (applied) return <Check size={13} />
+  return <Zap size={13} />
 }
 
 function RestoreButton({
@@ -103,7 +115,7 @@ function RestoreButton({
       className="btn mt-1.5 w-full justify-center"
       disabled={disabled}
       onClick={onClick}
-      title={`Backup: ${new Date(backup.takenAt).toLocaleString()}`}
+      title={`Backup taken ${new Date(backup.takenAt).toLocaleString()}`}
     >
       {busy ? <Loader2 size={12} className="animate-spin" /> : <RotateCcw size={12} />}
       Restore previous settings ({summary})
@@ -113,10 +125,10 @@ function RestoreButton({
 
 function ResultBanner({ result }: { result: OperationResult }) {
   const tone = result.ok
-    ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-200'
-    : 'border-red-500/30 bg-red-500/10 text-red-200'
+    ? 'border-success/30 bg-success/10 text-success'
+    : 'border-danger/30 bg-danger/10 text-danger'
   return (
-    <div className={`mt-2 flex items-start gap-1.5 rounded-md border px-2 py-1.5 text-[11px] ${tone}`}>
+    <div className={`fade-in mt-2 flex items-start gap-1.5 rounded-md border px-2 py-1.5 text-[11px] ${tone}`}>
       {result.ok ? (
         <Check size={12} className="mt-0.5 shrink-0" />
       ) : (

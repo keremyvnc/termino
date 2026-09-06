@@ -3,6 +3,7 @@ import type { TermCreateOptions } from '@shared/ipc'
 import type { ScriptStep } from '@shared/types'
 import { ScriptQueue } from './ScriptQueue'
 import * as ansi from './ansi'
+import { createStartupGate } from './startupGate'
 import { createVariableResolver } from './variableResolver'
 import type { SessionContext, SessionHooks, TerminalSession } from './TerminalSession'
 
@@ -28,8 +29,19 @@ export class LocalPtySession implements TerminalSession {
       createVariableResolver(context.secrets, context.options.vars ?? {}, context.options.defId)
     )
 
+    // PowerShell acilis ciktisi (profil mesajlari/hatalari) Clear-Host'a kadar ekrana gitmez.
+    const isPowerShell = context.options.shell !== 'cmd'
+    const gate = isPowerShell
+      ? createStartupGate({
+          emit: (data) => this.hooks.onData(data),
+          onDiscard: (text) =>
+            context.logger?.log('terminal:startup-output-hidden', { id: this.id, text })
+        })
+      : null
+
     this.process.onData((data) => {
-      this.hooks.onData(data)
+      if (gate) gate.feed(data)
+      else this.hooks.onData(data)
       this.scripts.feed(data)
     })
     this.process.onExit(({ exitCode, signal }) => {

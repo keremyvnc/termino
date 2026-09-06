@@ -1,6 +1,7 @@
 import type { TermCreateOptions, TermExitInfo } from '@shared/ipc'
 import type { ScriptStep } from '@shared/types'
 import type { SecretReader } from '../credentials'
+import type { Logger } from '../logger'
 
 /**
  * Terminal saglayici arayuzu. local (node-pty) ve ssh (ssh2) bunu uygular;
@@ -30,6 +31,8 @@ export interface SessionContext {
   options: TermCreateOptions
   hooks: SessionHooks
   secrets: SecretReader
+  /** Tani logu (istege bagli): gizlenen acilis ciktisi gibi olaylar buraya yazilir. */
+  logger?: Logger
 }
 
 /**

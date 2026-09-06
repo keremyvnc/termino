@@ -2,6 +2,9 @@ import type { Project } from '@shared/types'
 import type { EditorTab } from '../../store/useEditorStore'
 import type { TermTab } from '../../store/useTerminalStore'
 
+/** Hic sekme secili degilken ya da bu id secildiginde proje ozeti gorunur. */
+export const OVERVIEW_TAB_ID = 'overview'
+
 /** Sekme cubugunda terminal ve editor sekmeleri ayni bicimde gosterilir. */
 export interface AreaTab {
   id: string
@@ -30,4 +33,9 @@ export function fileTitle(project: Project, tab: EditorTab): string {
       ? project.terminals.find((t) => t.id === tab.defId)
       : project.commands.find((c) => c.id === tab.defId)
   return def ? def.name : '(deleted)'
+}
+
+/** Aktif id bir sekmeye denk gelmiyorsa ozet sayfasi gosterilir. */
+export function isOverviewActive(activeId: string | undefined, tabs: AreaTab[]): boolean {
+  return !activeId || activeId === OVERVIEW_TAB_ID || !tabs.some((t) => t.id === activeId)
 }

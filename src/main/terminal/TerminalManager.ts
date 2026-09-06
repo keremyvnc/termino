@@ -1,6 +1,7 @@
 import type { TermCreateOptions, TermExitInfo } from '@shared/ipc'
 import type { ScriptStep } from '@shared/types'
 import type { SecretReader } from '../credentials'
+import type { Logger } from '../logger'
 import { createDefaultSessionFactories } from './sessionFactories'
 import type {
   SessionFactory,
@@ -28,7 +29,8 @@ export class TerminalManager {
   constructor(
     private readonly events: TerminalEventSink,
     private readonly secrets: SecretReader,
-    private readonly factories: SessionFactoryRegistry = createDefaultSessionFactories()
+    private readonly factories: SessionFactoryRegistry = createDefaultSessionFactories(),
+    private readonly logger?: Logger
   ) {}
 
   /** Yeni bir terminal turu tanitir. */
@@ -38,12 +40,20 @@ export class TerminalManager {
 
   create(options: TermCreateOptions): string {
     const id = options.id
-    if (this.sessions.has(id)) throw new Error(`Terminal already exists: ${id}`)
+    // Ayni sekme icin ikinci istek (React StrictMode'da efektler iki kez calisir,
+    // ya da xterm yeniden baglanir) hata degildir: acik oturum kullanilir.
+    if (this.sessions.has(id)) {
+      this.logger?.log('terminal:create-reused', { id })
+      return id
+    }
 
     const factory = this.factories.get(options.kind)
     if (!factory) throw new Error(`Unsupported terminal type: ${options.kind}`)
 
-    this.sessions.set(id, factory({ id, options, hooks: this.hooksFor(id), secrets: this.secrets }))
+    this.sessions.set(
+      id,
+      factory({ id, options, hooks: this.hooksFor(id), secrets: this.secrets, logger: this.logger })
+    )
     return id
   }
 

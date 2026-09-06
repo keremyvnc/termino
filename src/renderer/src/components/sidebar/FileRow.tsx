@@ -1,13 +1,11 @@
-import { useState } from 'react'
 import { ExternalLink, FileCode2, Globe, Play, Server, Terminal, Trash2 } from 'lucide-react'
 import type { CommandDef, Project, TerminalDef } from '@shared/types'
 import { useAppStore } from '../../store/useAppStore'
+import { confirmDialog } from '../../store/useConfirmStore'
 import { describeCommand, describeSession } from '../editor/stepText'
 import { useEditorStore, type FileKind } from '../../store/useEditorStore'
 import { useTerminalStore } from '../../store/useTerminalStore'
-
-/** Yanlislikla silmeyi onlemek icin ikinci tiklama beklenir. */
-const CONFIRM_WINDOW_MS = 3000
+import { isAlive } from '../../store/terminalTabs'
 
 /** Agactaki tek bir YAML dosyasi: tik editoru acar, ▶ / cift tik calistirir. */
 export function FileRow({
@@ -22,9 +20,12 @@ export function FileRow({
   const showToast = useAppStore((s) => s.showToast)
   const openEditor = useEditorStore((s) => s.open)
   const activeId = useTerminalStore((s) => s.activeByProject[project.id])
-  const [confirming, setConfirming] = useState(false)
+  const running = useTerminalStore((s) =>
+    s.tabs.some((t) => t.createOpts.defId === item.id && isAlive(t, project.id))
+  )
 
   const session = kind === 'session' ? (item as TerminalDef) : null
+  const command = kind === 'command' ? (item as CommandDef) : null
   const selected = activeId === `${kind}:${item.id}`
 
   const run = (): void => {
@@ -32,52 +33,60 @@ export function FileRow({
     const started = session
       ? terminals.openDef(project, session)
       : terminals.runCommand(project, item as CommandDef)
-    started.catch((e) => showToast(String((e as Error).message ?? e)))
+    started.catch((e) => showToast(String((e as Error).message ?? e), 'error'))
   }
 
-  const remove = (): void => {
-    if (!confirming) {
-      setConfirming(true)
-      setTimeout(() => setConfirming(false), CONFIRM_WINDOW_MS)
-      return
-    }
-    void deleteFile(project, kind, item.id)
+  const remove = async (): Promise<void> => {
+    const ok = await confirmDialog({
+      title: `Delete "${item.name}"?`,
+      message: session
+        ? 'The session file and its saved passwords in the vault will be removed.'
+        : 'The command file will be removed. Commands that call it will stop working.',
+      confirmLabel: 'Delete',
+      danger: true
+    })
+    if (ok) await deleteFile(project, kind, item.id)
   }
 
   const Icon = iconFor(session)
+  const runTitle = session ? (session.kind === 'web' ? 'Open in browser' : 'Connect') : 'Run'
 
   return (
     <li
-      className={`group flex cursor-pointer items-center gap-1.5 rounded-md py-1 pl-1.5 pr-1 text-xs ${
-        selected ? 'bg-panel-2 text-fg' : 'text-muted hover:bg-panel-2/60 hover:text-fg'
-      }`}
+      className={`group tree-row pl-1.5 ${selected ? 'tree-row-active' : ''}`}
       onClick={() => openEditor(project.id, kind, item.id)}
       onDoubleClick={run}
       title={
         session ? describeSession(session, project) : describeCommand(item as CommandDef, project)
       }
     >
-      <Icon size={12} className={`shrink-0 ${session ? 'text-accent' : 'text-amber-300'}`} />
+      <span className="relative shrink-0">
+        <Icon size={13} className={session ? 'text-accent' : 'text-warn'} />
+        {running && (
+          <span
+            className="dot absolute -right-1 -top-1 h-1.5 w-1.5 bg-success ring-2 ring-panel"
+            title="Open"
+          />
+        )}
+      </span>
       <span className="truncate">{item.name}</span>
-      {!session && (
-        <span className="shrink-0 text-[10px] text-muted/70">{(item as CommandDef).steps.length}</span>
-      )}
+      <span className="ml-1 truncate text-[11px] text-muted/60 group-hover:hidden">
+        {hint(session, command)}
+      </span>
       <span className="flex-1" />
       <button
-        className={`btn-icon h-5 w-5 opacity-0 group-hover:opacity-100 ${
-          confirming ? 'text-red-300 opacity-100' : ''
-        }`}
-        title={confirming ? 'Click again to delete' : 'Delete'}
+        className="btn-icon btn-icon-sm hidden hover:text-danger group-hover:inline-flex"
+        title="Delete"
         onClick={(e) => {
           e.stopPropagation()
-          remove()
+          void remove()
         }}
       >
-        <Trash2 size={11} />
+        <Trash2 size={12} />
       </button>
       <button
-        className="btn-icon h-5 w-5 text-emerald-400 hover:bg-emerald-400/15"
-        title={session ? (session.kind === 'web' ? 'Open in browser' : 'Connect') : 'Run'}
+        className="btn-icon btn-icon-sm text-success/80 hover:bg-success/15 hover:text-success"
+        title={runTitle}
         onClick={(e) => {
           e.stopPropagation()
           run()
@@ -87,6 +96,16 @@ export function FileRow({
       </button>
     </li>
   )
+}
+
+/** Satirin sagindaki kisa ipucu: hedef adres ya da adim sayisi. */
+function hint(session: TerminalDef | null, command: CommandDef | null): string {
+  if (session) {
+    if (session.kind === 'ssh') return session.host ?? ''
+    return session.kind === 'web' ? '' : 'local'
+  }
+  const n = command?.steps.length ?? 0
+  return `${n} step${n === 1 ? '' : 's'}`
 }
 
 function iconFor(session: TerminalDef | null): typeof Terminal {

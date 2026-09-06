@@ -52,11 +52,11 @@ export function StepsEditor({
       <ol className="space-y-1.5">
         {steps.length === 0 && (
           <li className="rounded-md border border-dashed border-border px-3 py-4 text-center text-xs text-muted">
-No steps yet. Add one below.
+            No steps yet — add one with the buttons below.
           </li>
         )}
         {steps.map((step, i) => (
-          <li key={i} className="group flex items-start gap-2 rounded-md border border-border bg-panel-2 px-2.5 py-2">
+          <li key={i} className="group flex items-start gap-2 rounded-md border border-border bg-panel-2 px-2.5 py-2 transition-colors hover:border-border-strong">
             <span className="mt-1 w-5 shrink-0 text-right font-mono text-[11px] text-muted">{i + 1}.</span>
             <StepIcon step={step} />
             <div className="min-w-0 flex-1">
@@ -68,18 +68,18 @@ No steps yet. Add one below.
               />
             </div>
             <div className="flex shrink-0 items-center opacity-0 group-hover:opacity-100">
-              <button className="btn-icon h-6 w-6" title="Move up" onClick={() => move(i, -1)} disabled={i === 0}>
+              <button className="btn-icon btn-icon-sm" title="Move up" onClick={() => move(i, -1)} disabled={i === 0}>
                 <ArrowUp size={12} />
               </button>
               <button
-                className="btn-icon h-6 w-6"
+                className="btn-icon btn-icon-sm"
                 title="Move down"
                 onClick={() => move(i, 1)}
                 disabled={i === steps.length - 1}
               >
                 <ArrowDown size={12} />
               </button>
-              <button className="btn-icon h-6 w-6 hover:text-red-300" title="Delete step" onClick={() => remove(i)}>
+              <button className="btn-icon btn-icon-sm hover:text-danger" title="Delete step" onClick={() => remove(i)}>
                 <Trash2 size={12} />
               </button>
             </div>
@@ -117,7 +117,7 @@ No steps yet. Add one below.
 function StepIcon({ step }: { step: ScriptStep }) {
   const cls = 'mt-1 shrink-0'
   if (step.type === 'send') return <Terminal size={13} className={`${cls} text-accent`} />
-  if (step.type === 'expect') return <Eye size={13} className={`${cls} text-amber-300`} />
+  if (step.type === 'expect') return <Eye size={13} className={`${cls} text-warn`} />
   if (step.type === 'wait') return <Clock size={13} className={`${cls} text-muted`} />
   return <ListOrdered size={13} className={`${cls} text-purple-300`} />
 }
@@ -142,7 +142,7 @@ function StepBody({
             <span className="font-mono text-xs text-muted">$</span>
             <TextField
               mono
-              className="py-1 text-xs"
+              className="input-sm"
               value={step.text}
               placeholder="e.g. cd /var/log   ({{ip}}, {{secret:su}} can be used)"
               onCommit={(text) => onChange({ type: 'send', text })}
@@ -160,14 +160,14 @@ function StepBody({
           <div className="flex items-center gap-2">
             <TextField
               mono
-              className="py-1 text-xs"
+              className="input-sm"
               value={step.pattern}
               placeholder='e.g. password:   or   [$#] $'
               onCommit={(pattern) => onChange({ ...step, pattern })}
             />
             <span className="shrink-0 text-[11px] text-muted">up to</span>
             <NumberField
-              className="w-20 py-1 text-xs"
+              className="input-sm w-20"
               value={Math.round((step.timeoutMs ?? 15000) / 1000)}
               min={1}
               onCommit={(sec) => onChange({ ...step, timeoutMs: sec * 1000 })}
@@ -182,7 +182,7 @@ function StepBody({
           <div className="mb-1 text-[11px] text-muted">Wait</div>
           <div className="flex items-center gap-2">
             <NumberField
-              className="w-24 py-1 text-xs"
+              className="input-sm w-24"
               value={step.ms}
               onCommit={(ms) => onChange({ type: 'wait', ms })}
             />
@@ -214,7 +214,7 @@ function RunStep({
       <div className="mb-1 text-[11px] text-muted">Run another command</div>
       <div className="flex items-center gap-2">
         <select
-          className="input w-auto py-1 text-xs"
+          className="input input-sm w-auto"
           value={target?.name ?? step.command}
           onChange={(e) => onChange({ type: 'run', command: e.target.value })}
         >
@@ -226,7 +226,7 @@ function RunStep({
           ))}
         </select>
         {target && (
-          <button className="btn py-1" onClick={() => setExpanded((v) => !v)}>
+          <button className="btn" onClick={() => setExpanded((v) => !v)}>
             {expanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
             {target.steps.length} {target.steps.length === 1 ? 'step' : 'steps'}
           </button>

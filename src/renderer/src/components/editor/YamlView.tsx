@@ -40,14 +40,14 @@ export function YamlView({ project, tab, visible }: { project: Project; tab: Edi
     <div className="flex h-full flex-col">
       <div className="flex h-8 shrink-0 items-center gap-2 border-b border-border bg-panel-2/40 px-3 text-[11px] text-muted">
         <span>Raw file. Saved changes are reflected in the form view as well.</span>
-        {dirty && <span className="text-amber-400">● unsaved</span>}
+        {dirty && <span className="text-warn">● unsaved</span>}
         <span className="flex-1" />
-        <button className="btn py-0.5" disabled={!dirty} onClick={save} title="Save (Ctrl+S)">
+        <button className="btn" disabled={!dirty} onClick={save} title="Save (Ctrl+S)">
           <Save size={12} /> Save
         </button>
       </div>
       {error && (
-        <div className="flex shrink-0 items-center gap-2 border-b border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs text-red-300">
+        <div className="flex shrink-0 items-center gap-2 border-b border-danger/30 bg-danger/10 px-3 py-1.5 text-xs text-danger">
           <AlertTriangle size={12} /> {error}
         </div>
       )}

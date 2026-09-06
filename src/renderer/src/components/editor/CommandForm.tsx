@@ -1,7 +1,7 @@
 import type { CommandDef, Project, ShellKind } from '@shared/types'
 import { countSteps } from '@shared/steps'
 import { useAppStore } from '../../store/useAppStore'
-import { Field, TextField } from './fields'
+import { Field, FormSection, TextField } from './fields'
 import { StepsEditor } from './StepsEditor'
 import { targetLabel } from './stepText'
 
@@ -35,60 +35,63 @@ export function CommandForm({ project, cmd }: { project: Project; cmd: CommandDe
   const sessions = project.terminals.filter((t) => t.kind !== 'web')
 
   return (
-    <div className="mx-auto max-w-3xl space-y-5 p-5">
-      <div className="grid grid-cols-[1fr_1fr] gap-4">
-        <Field label="Command name">
-          <TextField value={cmd.name} onCommit={(name) => name.trim() && patch({ name: name.trim() })} />
-        </Field>
-        <Field label="Where to run">
-          <select className="input" value={targetValue} onChange={(e) => onTarget(e.target.value)}>
-            {sessions.length > 0 && (
-              <optgroup label="Sessions">
-                {sessions.map((t) => (
-                  <option key={t.id} value={t.name}>
-                    {t.name}
-                    {t.kind === 'ssh' ? ` (${t.username}@${t.host})` : ' (local)'}
-                  </option>
-                ))}
+    <div className="mx-auto max-w-3xl space-y-4 p-5">
+      <FormSection title="Command">
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Name" hint="Other commands can call this one by name.">
+            <TextField value={cmd.name} onCommit={(name) => name.trim() && patch({ name: name.trim() })} />
+          </Field>
+          <Field label="Where to run">
+            <select className="input" value={targetValue} onChange={(e) => onTarget(e.target.value)}>
+              {sessions.length > 0 && (
+                <optgroup label="Sessions">
+                  {sessions.map((t) => (
+                    <option key={t.id} value={t.name}>
+                      {t.name}
+                      {t.kind === 'ssh' ? ` (${t.username}@${t.host})` : ' (local)'}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+              <optgroup label="Local">
+                <option value={`${LOCAL_PREFIX}powershell`}>Local PowerShell</option>
+                <option value={`${LOCAL_PREFIX}cmd`}>Local CMD</option>
+                <option value={`${LOCAL_PREFIX}ssh`}>Currently open SSH tab</option>
               </optgroup>
-            )}
-            <optgroup label="Local">
-              <option value={`${LOCAL_PREFIX}powershell`}>Local PowerShell</option>
-              <option value={`${LOCAL_PREFIX}cmd`}>Local CMD</option>
-              <option value={`${LOCAL_PREFIX}ssh`}>Currently open SSH tab</option>
-            </optgroup>
-          </select>
-        </Field>
-      </div>
+            </select>
+          </Field>
+        </div>
 
-      <label className="flex items-center gap-2 text-xs text-muted">
-        <input
-          type="checkbox"
-          checked={cmd.runInNewTab}
-          onChange={(e) => patch({ runInNewTab: e.target.checked })}
-        />
-        Open a new tab on every run (when off, the open session is reused)
-      </label>
+        <label className="flex cursor-pointer items-start gap-2 rounded-md border border-border bg-bg/40 px-2.5 py-2 text-xs text-muted hover:text-fg">
+          <input
+            type="checkbox"
+            className="mt-0.5 accent-[#38bdf8]"
+            checked={cmd.runInNewTab}
+            onChange={(e) => patch({ runInNewTab: e.target.checked })}
+          />
+          <span>
+            <span className="font-medium text-fg">Always open a new tab</span>
+            <br />
+            When off, the command is typed into the session tab that is already open.
+          </span>
+        </label>
+      </FormSection>
 
-      <div className="rounded-md border border-accent/30 bg-accent/5 px-3 py-2 text-xs">
-        <span className="text-muted">Summary: </span>
-        <span className="font-medium">
-          {total === null ? 'invalid step chain' : `${total} step${total === 1 ? '' : 's'}`}
-        </span>
-        <span className="text-muted"> run in order in </span>
-        <span className="font-medium">{targetLabel(cmd, project)}</span>
-        <span className="text-muted">.</span>
-      </div>
-
-      <div>
-        <div className="label">Steps</div>
+      <FormSection
+        title="Steps"
+        description={
+          total === null
+            ? 'The step chain is invalid: a called command is missing or calls itself.'
+            : `${total} step${total === 1 ? '' : 's'} run in order in ${targetLabel(cmd, project)}.`
+        }
+      >
         <StepsEditor
           steps={cmd.steps}
           project={project}
           excludeCommandId={cmd.id}
           onChange={(steps) => patch({ steps })}
         />
-      </div>
+      </FormSection>
     </div>
   )
 }

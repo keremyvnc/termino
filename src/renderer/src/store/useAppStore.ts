@@ -7,7 +7,7 @@ interface AppState {
   selectedId: string | null
   adapters: AdapterInfo[]
   loading: boolean
-  toast: string | null
+  toast: { message: string; tone: ToastTone } | null
   /** Yeni proje adini soran diyalog acik mi. */
   newProjectOpen: boolean
 
@@ -23,8 +23,10 @@ interface AppState {
   removeProject(id: string): Promise<void>
   setAdapters(adapters: AdapterInfo[]): void
   refreshAdapters(): Promise<void>
-  showToast(message: string): void
+  showToast(message: string, tone?: ToastTone): void
 }
+
+export type ToastTone = 'info' | 'success' | 'error'
 
 let toastTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -37,14 +39,14 @@ export const useAppStore = create<AppState>((set, get) => ({
   newProjectOpen: false,
 
   async load() {
-    const [projects, adapters] = await Promise.all([
-      window.api.projects.list(),
-      window.api.network.listAdapters().catch(() => [])
-    ])
+    // Projeler hemen gosterilir; adaptor listesi (PowerShell) daha yavas gelir ve arkadan dolar.
+    const projects = await window.api.projects.list()
     const stored = localStorage.getItem('termino.selected')
     const selectedId =
       projects.find((p) => p.id === stored)?.id ?? projects[0]?.id ?? null
-    set({ projects, adapters, loading: false, selectedId })
+    set({ projects, loading: false, selectedId })
+    const adapters = await window.api.network.listAdapters().catch(() => [])
+    set({ adapters })
   },
 
   setProjects(projects) {
@@ -83,9 +85,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       const saved = await window.api.projects.save(p)
       set((s) => ({ projects: [...s.projects, saved], selectedId: saved.id }))
       localStorage.setItem('termino.selected', saved.id)
-      get().showToast(`"${saved.name}" imported. Set the adapter and passwords again.`)
+      get().showToast(`"${saved.name}" imported. Set the adapter and passwords again.`, 'success')
     } catch (e) {
-      get().showToast('Import failed: ' + String((e as Error).message ?? e))
+      get().showToast('Import failed: ' + String((e as Error).message ?? e), 'error')
     }
   },
 
@@ -116,14 +118,15 @@ export const useAppStore = create<AppState>((set, get) => ({
     try {
       set({ adapters: await window.api.network.listAdapters() })
     } catch (e) {
-      get().showToast('Could not read adapters: ' + String(e))
+      get().showToast('Could not read adapters: ' + String(e), 'error')
     }
   },
 
-  showToast(message) {
+  showToast(message, tone = 'info') {
     if (toastTimer) clearTimeout(toastTimer)
-    set({ toast: message })
-    toastTimer = setTimeout(() => set({ toast: null }), 3000)
+    set({ toast: { message, tone } })
+    // Hata mesajlari okunabilsin diye biraz daha uzun kalir.
+    toastTimer = setTimeout(() => set({ toast: null }), tone === 'error' ? 6000 : 3500)
   }
 }))
 

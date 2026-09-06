@@ -36,7 +36,9 @@ export function createServices(getWindow: () => BrowserWindow | null): Services 
 
   const terminals = new TerminalManager(
     new WebContentsTerminalSink(() => getWindow()?.webContents ?? null),
-    vault
+    vault,
+    undefined,
+    logger
   )
 
   const autoApplier = new AutoApplier(projects, network, (event) =>

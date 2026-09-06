@@ -1,12 +1,15 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useAppStore, useSelectedProject } from './store/useAppStore'
+import { useUiStore } from './store/useUiStore'
 import { TitleBar } from './components/TitleBar'
+import { StatusBar } from './components/StatusBar'
 import { Sidebar } from './components/sidebar/Sidebar'
 import { ProjectHeader } from './components/ProjectHeader'
 import { TerminalArea } from './components/terminalArea/TerminalArea'
 import { RightPanel } from './components/RightPanel'
 import { EmptyState } from './components/EmptyState'
 import { Toast } from './components/Toast'
+import { ConfirmDialog } from './components/ConfirmDialog'
 import { CommandPalette } from './components/palette/CommandPalette'
 import { NewProjectDialog } from './components/NewProjectDialog'
 
@@ -18,7 +21,10 @@ export default function App() {
   const refreshAdapters = useAppStore((s) => s.refreshAdapters)
   const loading = useAppStore((s) => s.loading)
   const project = useSelectedProject()
-  const [palette, setPalette] = useState(false)
+  const paletteOpen = useUiStore((s) => s.paletteOpen)
+  const setPalette = useUiStore((s) => s.setPalette)
+  const togglePalette = useUiStore((s) => s.togglePalette)
+  const networkOpen = useUiStore((s) => s.networkPanelOpen)
 
   useEffect(() => {
     void load()
@@ -28,7 +34,8 @@ export default function App() {
       showToast(
         ev.result.ok
           ? `${ev.projectName}: profile applied automatically to ${ev.adapterName}`
-          : `${ev.projectName}: automatic apply failed — ${ev.result.message}`
+          : `${ev.projectName}: automatic apply failed — ${ev.result.message}`,
+        ev.result.ok ? 'success' : 'error'
       )
       setTimeout(() => void refreshAdapters(), 1500)
     })
@@ -43,12 +50,12 @@ export default function App() {
     const onKey = (e: KeyboardEvent): void => {
       if (e.ctrlKey && !e.shiftKey && e.key.toLowerCase() === 'k') {
         e.preventDefault()
-        setPalette((p) => !p)
+        togglePalette()
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [])
+  }, [togglePalette])
 
   return (
     <div className="flex h-full flex-col">
@@ -61,7 +68,7 @@ export default function App() {
               <ProjectHeader project={project} />
               <div className="flex min-h-0 flex-1">
                 <TerminalArea project={project} />
-                <RightPanel project={project} />
+                {networkOpen && <RightPanel project={project} />}
               </div>
             </>
           ) : (
@@ -69,9 +76,13 @@ export default function App() {
           )}
         </main>
       </div>
+      <StatusBar project={project} />
       <Toast />
+      <ConfirmDialog />
       <NewProjectDialog />
-      {palette && project && <CommandPalette project={project} onClose={() => setPalette(false)} />}
+      {paletteOpen && project && (
+        <CommandPalette project={project} onClose={() => setPalette(false)} />
+      )}
     </div>
   )
 }

@@ -82,7 +82,7 @@ export function CommandPalette({ project, onClose }: { project: Project; onClose
           ))}
         </ul>
 
-        <div className="flex gap-3 border-t border-border px-3 py-1.5 text-[10px] text-muted">
+        <div className="flex gap-3 border-t border-border px-3 py-1.5 text-[11px] text-muted">
           <span>↑↓ select</span>
           <span>Enter run</span>
           <span>Esc close</span>
@@ -106,7 +106,7 @@ function ItemRow({
   return (
     <button
       className={`flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-left ${
-        active ? 'bg-panel-2' : 'hover:bg-panel-2/60'
+        active ? 'bg-panel-3' : 'hover:bg-panel-2'
       }`}
       onMouseEnter={onHover}
       onClick={onSelect}
@@ -116,7 +116,7 @@ function ItemRow({
       <span className="ml-auto max-w-[50%] truncate font-mono text-[11px] text-muted">
         {item.hint}
       </span>
-      <span className="w-12 text-right text-[10px] uppercase text-muted/70">{item.group}</span>
+      <span className="chip chip-muted w-16 justify-center">{item.group}</span>
     </button>
   )
 }

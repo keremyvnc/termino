@@ -1,8 +1,14 @@
 import type { Project, TerminalDef, TerminalKind } from '@shared/types'
 import { useAppStore } from '../../store/useAppStore'
-import { Field, NumberField, TextField } from './fields'
+import { Field, FormSection, NumberField, TextField } from './fields'
 import { SecretsBar } from './SecretsBar'
 import { StepsEditor } from './StepsEditor'
+
+const KIND_LABELS: { value: TerminalKind; label: string; hint: string }[] = [
+  { value: 'ssh', label: 'SSH', hint: 'Log in to a device over SSH' },
+  { value: 'local', label: 'Local PowerShell', hint: 'A PowerShell tab on this PC' },
+  { value: 'web', label: 'Web address', hint: 'Open a page in the browser' }
+]
 
 /**
  * Oturum dosyasinin form gorunumu: tur, baglanti bilgileri, sifreler (kasa)
@@ -19,65 +25,81 @@ export function SessionForm({ project, def }: { project: Project; def: TerminalD
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-5 p-5">
-      <div className="grid grid-cols-[1fr_200px] gap-4">
-        <Field label="Session name">
-          <TextField value={def.name} onCommit={(name) => name.trim() && patch({ name: name.trim() })} />
-        </Field>
-        <Field label="Type">
-          <select
-            className="input"
-            value={def.kind}
-            onChange={(e) => patch({ kind: e.target.value as TerminalKind })}
-          >
-            <option value="ssh">SSH</option>
-            <option value="local">Local PowerShell</option>
-            <option value="web">Web address (open in browser)</option>
-          </select>
-        </Field>
-      </div>
-
-      {def.kind === 'ssh' && (
-        <div className="grid grid-cols-[1fr_100px_1fr] gap-4">
-          <Field label="Host">
-            <TextField mono value={def.host ?? ''} placeholder="10.1.1.1" onCommit={(host) => patch({ host: host.trim() })} />
+    <div className="mx-auto max-w-3xl space-y-4 p-5">
+      <FormSection title="Session">
+        <div className="grid grid-cols-[1fr_auto] gap-4">
+          <Field label="Name" hint="Commands refer to the session by this name.">
+            <TextField value={def.name} onCommit={(name) => name.trim() && patch({ name: name.trim() })} />
           </Field>
-          <Field label="Port">
-            <NumberField value={def.port ?? 22} min={1} onCommit={(port) => patch({ port: port || 22 })} />
-          </Field>
-          <Field label="Username">
-            <TextField mono value={def.username ?? ''} placeholder="root" onCommit={(username) => patch({ username: username.trim() })} />
+          <Field label="Type">
+            <div className="flex h-8 overflow-hidden rounded-md border border-border" role="radiogroup">
+              {KIND_LABELS.map((k) => (
+                <button
+                  key={k.value}
+                  role="radio"
+                  aria-checked={def.kind === k.value}
+                  title={k.hint}
+                  className={`px-3 text-xs transition-colors ${
+                    def.kind === k.value ? 'bg-accent/15 text-accent' : 'text-muted hover:bg-panel-2 hover:text-fg'
+                  }`}
+                  onClick={() => patch({ kind: k.value })}
+                >
+                  {k.label}
+                </button>
+              ))}
+            </div>
           </Field>
         </div>
+      </FormSection>
+
+      {def.kind === 'ssh' && (
+        <FormSection title="Connection">
+          <div className="grid grid-cols-[1fr_90px_1fr] gap-4">
+            <Field label="Host">
+              <TextField mono value={def.host ?? ''} placeholder="10.1.1.1" onCommit={(host) => patch({ host: host.trim() })} />
+            </Field>
+            <Field label="Port">
+              <NumberField value={def.port ?? 22} min={1} onCommit={(port) => patch({ port: port || 22 })} />
+            </Field>
+            <Field label="Username">
+              <TextField mono value={def.username ?? ''} placeholder="root" onCommit={(username) => patch({ username: username.trim() })} />
+            </Field>
+          </div>
+          <p className="text-[11px] text-muted/80">
+            Tip: use <code className="font-mono text-fg">{'{{ip}}'}</code> as the host to follow the project's network profile.
+          </p>
+        </FormSection>
       )}
 
       {def.kind === 'web' && (
-        <Field label="Address">
-          <TextField
-            mono
-            value={def.url ?? ''}
-            placeholder="http://10.1.1.1 or https://device.local/admin"
-            onCommit={(url) => patch({ url: url.trim() })}
-          />
-        </Field>
+        <FormSection title="Address">
+          <Field label="URL">
+            <TextField
+              mono
+              value={def.url ?? ''}
+              placeholder="http://10.1.1.1 or https://device.local/admin"
+              onCommit={(url) => patch({ url: url.trim() })}
+            />
+          </Field>
+        </FormSection>
       )}
 
       {def.kind === 'ssh' && (
-        <div className="overflow-hidden rounded-md border border-border">
+        <FormSection
+          title="Passwords"
+          description="Stored encrypted in the Windows vault, never in the YAML file. Extra secrets can be used in steps as {{secret:name}}."
+        >
           <SecretsBar def={def} project={project} />
-        </div>
+        </FormSection>
       )}
 
       {def.kind !== 'web' && (
-        <div>
-          <div className="label">Run automatically after connecting</div>
-          <p className="mb-2 text-[11px] text-muted">
-            E.g. <code className="font-mono">ssh</code> from the jump host to a second device, then{' '}
-            <code className="font-mono">su -</code>. Password lines (<code className="font-mono">{'{{secret:name}}'}</code>)
-            are sent when the password prompt appears.
-          </p>
+        <FormSection
+          title="After connecting"
+          description="Steps that run automatically once the session is open — e.g. ssh from a jump host to a second device, then su -. Password lines are sent when the prompt appears."
+        >
           <StepsEditor steps={def.script ?? []} project={project} onChange={(script) => patch({ script })} />
-        </div>
+        </FormSection>
       )}
     </div>
   )

@@ -50,13 +50,13 @@ export function TerminalSearch({
           else if (e.key === 'Enter') e.shiftKey ? prev() : next()
         }}
       />
-      <button className="btn-icon h-6 w-6" title="Previous (Shift+Enter)" onClick={prev}>
+      <button className="btn-icon btn-icon-sm" title="Previous (Shift+Enter)" onClick={prev}>
         <ChevronUp size={12} />
       </button>
-      <button className="btn-icon h-6 w-6" title="Next (Enter)" onClick={next}>
+      <button className="btn-icon btn-icon-sm" title="Next (Enter)" onClick={next}>
         <ChevronDown size={12} />
       </button>
-      <button className="btn-icon h-6 w-6" title="Close (Esc)" onClick={close}>
+      <button className="btn-icon btn-icon-sm" title="Close (Esc)" onClick={close}>
         <X size={12} />
       </button>
     </div>

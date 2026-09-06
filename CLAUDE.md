@@ -62,7 +62,12 @@ src/shared/       types.ts, ipc.ts (kanal adlari), projectYaml.ts (YAML donusumu
   geri yukleme bu dosyayi kullanir ve siler.
 - `src/main/autoApply.ts`: adaptor Up olunca autoApply acik projenin profilini uygular, renderer'a `net:autoApplied` gonderir.
   Somut yapilandiriciya degil `NetworkApplier` arayuzune bagimlidir.
-- Tani logu: `%APPDATA%/termino/termino.log` (renderer yuklemeleri, ag islemleri).
+- Tani logu: `%APPDATA%/termino/termino.log` (renderer yuklemeleri, ag islemleri, gizlenen kabuk acilis ciktisi).
+- PTY omru store'a aittir: `useTerminalStore.close` oldurur, `XtermView` unmount'ta oldurmez. `TerminalManager.create`
+  ayni id icin ikinci istekte hata vermez, acik oturumu kullanir (StrictMode cift efekt). `TerminalArea` tum projelerin
+  XtermView'larini bagli tutar; proje degisince terminal ve scrollback kaybolmaz.
+- PowerShell acilisi: `terminal/startupGate.ts` Clear-Host (ESC[3J) gelene kadar ciktiyi ekrana vermez; profil
+  hatasi gibi metinler `terminal:startup-output-hidden` olarak loga gider. 4 sn icinde temizleme gelmezse her sey aktarilir.
 - Testte VirtualBox Host-Only adaptoru (Ethernet 8, 192.168.56.1) kullanildi; gercek karta dokunma.
 
 ## SSH, kasa ve senaryo (Asama 4)
@@ -85,7 +90,8 @@ src/shared/       types.ts, ipc.ts (kanal adlari), projectYaml.ts (YAML donusumu
 ## Kisayollar ve cila (Asama 5)
 
 - Ctrl+K komut paleti (`palette/CommandPalette.tsx`, liste `palette/paletteItems.tsx`): komutlar, oturum tanimlari, hizli eylemler.
-- Ctrl+F terminalde arama (`TerminalSearch.tsx`, @xterm/addon-search). Ctrl+Shift+C/V kopyala-yapistir.
+- Ctrl+F terminalde arama (`TerminalSearch.tsx`, @xterm/addon-search). Kopyala-yapistir Windows Terminal gibi:
+  secim varken Ctrl+C kopyalar (yokken ^C gonderir), Ctrl+V yapistirir, sag tik secim varsa kopyalar yoksa yapistirir.
 - Ctrl+Shift+T yeni sekme, Ctrl+Shift+W kapat, Alt+1..9 sekme sec. Uygulama kisayollari xterm'in
   `attachCustomKeyEventHandler` icinde `false` dondurulerek pencereye kabartilir.
 - Disa aktarma (proje basligi, indirme ikonu): JSON, `credentialRef` cikarilir. Ice aktarma (sol panel):
@@ -131,6 +137,22 @@ SOLID'e gore ayristirma. Yeni kod yazarken bu sinirlari koru:
   (`useNetworkOperations`, `useSessionSecrets`, `useYamlEditor`, `commandTargets.ts`, `terminalTabs.ts`).
 - Ayni kural iki yerde yazilmaz: IPv4/maske hesabi `src/shared/net.ts`, dosya adi/slug `src/shared/projectYaml.ts`.
 
+## Arayuz duzeni (Asama 8)
+
+- Sekme yokken ya da "Overview" sekmesi seciliyken `overview/ProjectOverview` gorunur: ag durumu + Apply IP,
+  oturum kartlari (Connect), komut satirlari (Run). Toplu "baslat" dugmesi yoktur; her satir kendi eylemini tasir.
+  Aktif sekme id'si `OVERVIEW_TAB_ID` (`terminalArea/tabModel.ts`); sekme kapaninca kalan yoksa ozet doner.
+- Gorunum durumu `store/useUiStore.ts` (palet acik mi, sag panel acik mi, adaptor listesi acik mi; localStorage).
+  Sag panel baslik cubugundan ve panel basligindan kapatilip acilir.
+- Silme islemleri `store/useConfirmStore.ts` + `components/ConfirmDialog.tsx` ile sorulur (`confirmDialog({...})`).
+  Zamanlanmis cift tiklama yoktur.
+- `showToast(message, tone)`: tone `info | success | error`; hata mesaji daha uzun kalir.
+- Alt durum cubugu `components/StatusBar.tsx`: bagli adaptor, profil uygulanmis mi, kisayollar, veri klasoru.
+- Ortak stiller `index.css` icinde `@layer components` altinda (`.btn`, `.btn-icon`, `.card`, `.chip`, `.kbd`,
+  `.tree-row`, `.input-sm`); utility siniflari bunlari ezebilir. Renk adlari: `success`, `warn`, `danger`.
+- Formlar `editor/fields.tsx` `FormSection` ile bolumlere ayrilir; oturum turu radyo grubudur.
+- Acilista projeler adaptor listesini beklemez (`useAppStore.load`).
+
 ## Kurallar
 
 - Sifreler asla proje JSON'una yazilmaz; `credentialRef` ile safeStorage kasasina isaret edilir.
@@ -148,3 +170,4 @@ SOLID'e gore ayristirma. Yeni kod yazarken bu sinirlari koru:
 5. Cila: kisayollar, dis/ic aktarma, kurulum paketi (tamamlandi)
 6. YAML dosya agaci: proje dizinleri, sessions/commands dosyalari, CodeMirror editor, komut surusu calistirma (tamamlandi)
 7. Yapisal duzen: main ve renderer'in SOLID'e gore ayristirilmasi, ortak yardimcilarin `shared` altina alinmasi (tamamlandi)
+8. Arayuz duzeni: Overview sayfasi, durum cubugu, onay diyalogu, katlanir ag paneli, form bolumleri (tamamlandi)
