@@ -4,9 +4,9 @@
 
 # Termino
 
-**Proje tabanlı test terminali — Windows için**
+**Project-based test terminal for Windows**
 
-Hazır komutlar · Ağ profilleri · Tek tıkla SSH oturumları
+Ready-made commands · Network profiles · One-click SSH sessions
 
 ![Electron](https://img.shields.io/badge/Electron-44-47848F?logo=electron&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
@@ -17,136 +17,136 @@ Hazır komutlar · Ağ profilleri · Tek tıkla SSH oturumları
 
 ---
 
-## Nedir?
+## What is it?
 
-Termino, saha ve laboratuvar testlerinde her gün tekrarlanan şu akışı tek pencereye toplar:
+Termino puts the routine every field or lab test starts with into a single window:
 
-1. Projeyi seç
-2. Bilgisayarın IP / alt ağını cihaza göre ayarla
-3. SSH ile bağlan, gerekirse atlama sunucusundan geç, `su -` ol
-4. Hazır komutları çalıştır
+1. Pick the project
+2. Set your PC's IP / subnet to match the device
+3. Connect over SSH, hop through a jump host if needed, become `root`
+4. Run the commands you always run
 
-Her proje bir klasördür: YAML dosyalarında tanımlı **oturumlar**, **komutlar** ve bir **ağ profili**. Sol paneldeki ağaçtan bir dosyaya tıklarsın, ▶ ile çalıştırırsın. YAML görmek zorunda değilsin; her şey form olarak da düzenlenir.
+A project is a folder: **sessions**, **commands** and a **network profile**, all defined in YAML. Click a file in the tree on the left, hit ▶ to run it. You never have to look at YAML if you don't want to; everything is editable as a form too.
 
-## Öne çıkanlar
+## Highlights
 
 | | |
 |---|---|
-| 🖥️ **Yerel terminal** | xterm.js + node-pty ile PowerShell / CMD sekmeleri, Ctrl+F arama, kopyala-yapıştır |
-| 🔐 **SSH oturumları** | ssh2 tabanlı; parola Windows DPAPI kasasında tutulur, YAML'a asla yazılmaz |
-| 🌐 **Ağ profili** | Adaptöre IP / maske / ağ geçidi ata, DHCP'ye dön, eski ayarı geri yükle. Yalnızca o işlem UAC ile yükseltilir |
-| 🔌 **Otomatik uygulama** | Adaptör takılınca projenin profili kendiliğinden uygulanır (MAC ile eşleşir, ad değişse de bulur) |
-| 📜 **Senaryo motoru** | `send` / `expect` / `wait` adımları; `{{ip}}` değişkenleri profilden, `{{secret:ad}}` kasadan gelir |
-| 🔗 **Zincirleme bağlantı** | Jump host → `ssh -i` → `su -` gibi çok adımlı girişler bir senaryodur, hazır şablonu vardır |
-| ⌨️ **Komut paleti** | Ctrl+K ile komut, oturum ve hızlı eylemlere anında eriş |
-| 📁 **Düz dosyalar** | Projeler `%APPDATA%/termino/projects/<id>/` altında YAML; dışarıdan düzenle, uygulama canlı izler |
-| 📤 **Dışa / içe aktarma** | Projeyi JSON olarak paylaş; parolalar dışarı çıkmaz |
+| 🖥️ **Local terminal** | PowerShell / CMD tabs powered by xterm.js + node-pty, Ctrl+F search, copy & paste |
+| 🔐 **SSH sessions** | Built on ssh2; passwords live in the Windows DPAPI vault and never touch YAML |
+| 🌐 **Network profiles** | Assign IP / mask / gateway to an adapter, fall back to DHCP, restore the previous config. Only that step is elevated via UAC |
+| 🔌 **Auto-apply** | When the adapter comes up, the project's profile is applied automatically (matched by MAC, so renamed adapters still work) |
+| 📜 **Script engine** | `send` / `expect` / `wait` steps; `{{ip}}` comes from the profile, `{{secret:name}}` from the vault |
+| 🔗 **Chained logins** | Jump host → `ssh -i` → `su -` is just a script, with a ready template |
+| ⌨️ **Command palette** | Ctrl+K to reach any command, session or quick action |
+| 📁 **Plain files** | Projects live under `%APPDATA%/termino/projects/<id>/` as YAML; edit them externally, the app watches for changes |
+| 📤 **Export / import** | Share a project as JSON; passwords are never exported |
 
-## Ekran düzeni
+## Layout
 
 ```
 ┌──────────────┬──────────────────────────────────┬──────────────┐
-│  Projeler    │  [ Terminal 1 ] [ SSH: cihaz ]   │  Ağ profili  │
-│  ├ proje.yaml│                                  │  Adaptör     │
-│  ├ sessions/ │   $ ping {{ip}}                  │  IP / Maske  │
-│  │  └ cihaz  │   Reply from 192.168.56.10 ...   │  [ Uygula ]  │
+│  Projects    │  [ Terminal 1 ] [ SSH: device ]  │  Network     │
+│  ├ project   │                                  │  Adapter     │
+│  ├ sessions/ │   $ ping {{ip}}                  │  IP / Mask   │
+│  │  └ device │   Reply from 192.168.56.10 ...   │  [ Apply ]   │
 │  └ commands/ │                                  │  [ DHCP ]    │
 │     ├ ▶ ping │                                  │              │
-│     └ ▶ log  │                                  │              │
+│     └ ▶ logs │                                  │              │
 └──────────────┴──────────────────────────────────┴──────────────┘
 ```
 
-## Bir proje neye benzer?
+## What a project looks like
 
 ```
 %APPDATA%/termino/projects/<id>/
-├── project.yaml          # ad, ağ profili, autoApply
+├── project.yaml          # name, network profile, autoApply
 ├── sessions/
-│   └── cihaz.yaml        # SSH hedefi + bağlantı senaryosu
+│   └── device.yaml       # SSH target + login script
 └── commands/
-    └── loglari-cek.yaml  # adım sürüsü, hangi oturumda çalışacağı
+    └── fetch-logs.yaml   # step sequence and the session it runs in
 ```
 
-**sessions/cihaz.yaml**
+**sessions/device.yaml**
 
 ```yaml
-name: cihaz
+name: device
 type: ssh
 host: "{{ip}}"
 username: root
-credentialRef: term:cihaz
+credentialRef: term:device
 steps:
   - expect: "(?i)password:"
-  - send: "{{secret:term:cihaz}}"
+  - send: "{{secret:term:device}}"
   - expect: "\$ $"
   - send: "su -"
 ```
 
-**commands/loglari-cek.yaml**
+**commands/fetch-logs.yaml**
 
 ```yaml
-name: Logları çek
-target: cihaz
+name: Fetch logs
+target: device
 steps:
   - send: "tail -n 200 /var/log/app.log"
   - wait: 500
-  - run: "Servisi yeniden başlat"   # başka bir komutu çağır
+  - run: "Restart service"   # call another command
 ```
 
-## Kısayollar
+## Shortcuts
 
-| Kısayol | İşlev |
+| Shortcut | Action |
 |---|---|
-| `Ctrl+K` | Komut paleti |
-| `Ctrl+F` | Terminalde ara |
-| `Ctrl+Shift+T` / `Ctrl+Shift+W` | Sekme aç / kapat |
-| `Alt+1..9` | Sekme seç |
-| `Ctrl+Shift+C` / `Ctrl+Shift+V` | Kopyala / yapıştır |
-| `Ctrl+S` | YAML görünümünde kaydet |
+| `Ctrl+K` | Command palette |
+| `Ctrl+F` | Search in terminal |
+| `Ctrl+Shift+T` / `Ctrl+Shift+W` | Open / close tab |
+| `Alt+1..9` | Select tab |
+| `Ctrl+Shift+C` / `Ctrl+Shift+V` | Copy / paste |
+| `Ctrl+S` | Save in YAML view |
 
-## Kurulum
+## Installation
 
-Hazır paket: `release/Termino-Setup-<sürüm>.exe` (kullanıcı bazlı NSIS kurulumu, dizin seçilebilir).
+Prebuilt package: `release/Termino-Setup-<version>.exe` (per-user NSIS installer, custom directory supported).
 
-Kaynaktan çalıştırmak için:
+To run from source:
 
 ```bash
 npm install
-npm run dev        # geliştirme (HMR)
-npm run build      # out/ altına derler
-npm run typecheck  # main + renderer tip kontrolü
-npm run dist       # kurulum paketi üretir (release/)
+npm run dev        # development with HMR
+npm run build      # compiles into out/
+npm run typecheck  # type-checks main + renderer
+npm run dist       # builds the installer (release/)
 ```
 
-> Windows gerektirir: ağ işlemleri PowerShell + UAC, parola kasası DPAPI kullanır.
+> Windows only: network operations rely on PowerShell + UAC, and the password vault uses DPAPI.
 
-## Mimari
+## Architecture
 
-Electron ana süreç ve React arayüzü birbirinden `contextIsolation` + `sandbox` ile ayrılmıştır; arayüz yalnızca `window.api` köprüsünü görür.
+The Electron main process and the React UI are separated by `contextIsolation` + `sandbox`; the renderer only sees the `window.api` bridge.
 
 ```
-src/main/       ana süreç
-  services.ts     nesne grafiği (tek kurulum yeri)
-  network/        PowerShell, UAC yükseltme, yedek/geri yükleme, adaptör izleme
-  terminal/       TerminalSession arayüzü, LocalPtySession, SshSession, ScriptRunner
-  project/        YAML disk deposu, fs.watch
-  ipc/            kanal kayıtları (project / network / terminal / credential / app)
-src/preload/    window.api köprüsü
+src/main/       main process
+  services.ts     object graph (single composition root)
+  network/        PowerShell runner, UAC elevation, backup/restore, adapter watcher
+  terminal/       TerminalSession interface, LocalPtySession, SshSession, ScriptRunner
+  project/        YAML store on disk, fs.watch
+  ipc/            channel registrations (project / network / terminal / credential / app)
+src/preload/    window.api bridge
 src/renderer/   React + zustand; sidebar, editor (CodeMirror), terminalArea, network, palette
-src/shared/     tipler, IPC kanal adları, YAML dönüşümü, IPv4 yardımcıları
+src/shared/     types, IPC channel names, YAML mapping, IPv4 helpers
 ```
 
-Tasarım ilkeleri:
+Design principles:
 
-- **Parolalar** yalnızca ana süreçte çözülür; YAML'da sadece `credentialRef` adı bulunur.
-- **Adaptör eşlemesi** MAC adresiyle yapılır, adla değil.
-- **Yükseltme** uygulamanın tamamına değil, yalnızca IP değiştiren PowerShell betiğine verilir.
-- **Yeni terminal türü** (serial, telnet…) eklemek için `TerminalSession` arayüzünü uygulayıp `sessionFactories.ts` içine bir satır eklemek yeter.
+- **Passwords** are decrypted only in the main process; YAML holds nothing but a `credentialRef` name.
+- **Adapters** are matched by MAC address, not by name.
+- **Elevation** is granted only to the PowerShell script that changes the IP, never to the whole app.
+- **New terminal types** (serial, telnet, …) only need a `TerminalSession` implementation and one line in `sessionFactories.ts`.
 
-## Teknolojiler
+## Built with
 
 Electron · React · TypeScript · electron-vite · zustand · xterm.js · node-pty · ssh2 · CodeMirror · yaml
 
-## Lisans
+## License
 
-Bu depo kişisel bir projedir; lisans henüz belirlenmemiştir.
+Personal project; no license has been chosen yet.
