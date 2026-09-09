@@ -8,7 +8,7 @@ import type {
   TerminalDef,
   TerminalKind
 } from './types'
-import { newId, newProject } from './types'
+import { DEFAULT_SHELL, newId, newProject, SSH_SHELL } from './types'
 
 /**
  * Proje dosyalarinin YAML bicimi. Hem main (disk) hem renderer (editor) ayni
@@ -19,7 +19,6 @@ import { newId, newProject } from './types'
  *   projects/<id>/commands/<ad>.yaml komut surusu
  */
 
-const SHELLS: ShellKind[] = ['powershell', 'cmd', 'ssh']
 const KINDS: TerminalKind[] = ['local', 'ssh', 'web']
 
 const COMMAND_HEADER = `# Command file. Steps run in order.
@@ -28,7 +27,8 @@ const COMMAND_HEADER = `# Command file. Steps run in order.
 #   wait: <ms>             waits
 #   run: <command name>    runs another command file at this point
 # target: name of the target session (file under sessions/). If empty, the shell
-# decides: local terminal (powershell/cmd) or the currently open SSH tab.
+# decides: a local shell (bash, zsh, powershell, cmd ... or "default" for the
+# system default) or the currently open SSH tab.
 # Variables: {{ip}} {{gateway}} {{project}} {{secret:name}}
 `
 
@@ -53,13 +53,15 @@ export function commandFromYaml(text: string, base: Pick<CommandDef, 'id'>): Com
   const raw = asObject(parse(text))
   const name = str(raw.name)
   if (!name) throw new Error('The "name" field is required')
-  const shell = str(raw.shell) as ShellKind
+  const shell = str(raw.shell).toLowerCase() as ShellKind
   const target = str(raw.target) || undefined
   return {
     id: base.id,
     name,
     target,
-    shell: SHELLS.includes(shell) ? shell : target ? 'ssh' : 'powershell',
+    // Kabuk adi dogrulanmaz: sistemde hangi kabuklar oldugunu main bilir,
+    // bilinmeyen ad calistirma aninda varsayilan kabuga duser (terminal/shells.ts).
+    shell: shell || (target ? SSH_SHELL : DEFAULT_SHELL),
     runInNewTab: Boolean(raw.newTab ?? raw.runInNewTab),
     steps: stepsFromYaml(raw.steps)
   }

@@ -9,3 +9,4 @@ export {
 export { createDefaultSessionFactories } from './sessionFactories'
 export { ScriptRunner, type ScriptTarget } from './ScriptRunner'
 export { createVariableResolver, type VariableResolver } from './variableResolver'
+export { systemShells, listShells, resolveShell, type ShellSource } from './shells'

@@ -1,10 +1,12 @@
-import { newId } from '@shared/types'
+import { DEFAULT_SHELL, newId, SSH_SHELL } from '@shared/types'
 import type { Project, ScriptStep, TerminalDef } from '@shared/types'
 import type { TermCreateOptions } from '@shared/ipc'
 import { flattenSteps } from '@shared/steps'
 import { projectVars } from './projectVariables'
+import { resolveShellId, shellLabel } from './useShellStore'
 
-export type LocalShell = 'powershell' | 'cmd'
+/** Yerel kabuk kimligi. Sabit liste yok: sistemde ne varsa o (bash, powershell, cmd ...). */
+export type LocalShell = string
 
 export interface TermTab {
   id: string
@@ -50,12 +52,12 @@ function createSshTab(
     id: newId(),
     projectId,
     kind: 'ssh',
-    shell: 'powershell',
+    shell: SSH_SHELL,
     title: opts.title ?? def.name ?? `SSH ${index}`,
     status: 'starting',
     createOpts: {
       kind: 'ssh',
-      shell: 'powershell',
+      shell: SSH_SHELL,
       ssh: {
         host: def.host ?? '',
         port: def.port ?? 22,
@@ -71,14 +73,16 @@ function createSshTab(
 }
 
 function createLocalTab(projectId: string, opts: OpenOptions, index: number): TermTab {
-  const shell = opts.shell ?? 'powershell'
+  // Dosyada yazan kabuk bu makinede yoksa (baska isletim sisteminde yazilmis proje)
+  // sistemin varsayilan kabugu kullanilir.
+  const shell = resolveShellId(opts.shell ?? DEFAULT_SHELL)
   const def = opts.def
   return {
     id: newId(),
     projectId,
     kind: 'local',
     shell,
-    title: opts.title ?? def?.name ?? `${shell === 'cmd' ? 'CMD' : 'PowerShell'} ${index}`,
+    title: opts.title ?? def?.name ?? `${shellLabel(shell)} ${index}`,
     status: 'starting',
     createOpts: {
       kind: 'local',

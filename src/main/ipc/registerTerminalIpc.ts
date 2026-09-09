@@ -4,7 +4,8 @@ import type { ScriptStep } from '@shared/types'
 import type { IpcContext } from './context'
 
 /** Terminal oturumu kanallari. Veri akisi ters yonde `TerminalEventSink` ile gider. */
-export function registerTerminalIpc({ terminals }: IpcContext): void {
+export function registerTerminalIpc({ terminals, shells }: IpcContext): void {
+  ipcMain.handle(IPC.termShells, () => shells.list())
   ipcMain.handle(IPC.termCreate, (_e, options: TermCreateOptions) => terminals.create(options))
   ipcMain.handle(IPC.termRunScript, (_e, id: string, steps: ScriptStep[]) =>
     terminals.runScript(id, steps)

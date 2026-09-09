@@ -1,4 +1,4 @@
-import { newId } from '@shared/types'
+import { DEFAULT_SHELL, newId, SSH_SHELL } from '@shared/types'
 import type { CommandDef, Project, TerminalDef } from '@shared/types'
 import type { FileKind } from '../../store/useEditorStore'
 
@@ -46,7 +46,7 @@ function newCommand(id: string, project: Project): CommandDef {
     id,
     name: uniqueName('new-command', project.commands),
     target: firstSsh?.name,
-    shell: firstSsh ? 'ssh' : 'powershell',
+    shell: firstSsh ? SSH_SHELL : DEFAULT_SHELL,
     runInNewTab: false,
     steps: []
   }

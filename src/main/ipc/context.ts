@@ -3,7 +3,7 @@ import type { CredentialVault } from '../credentials'
 import type { ProjectStore } from '../project/projectStore'
 import type { ProjectTransfer } from '../project/projectTransfer'
 import type { AdapterSource, NetworkConfigurator } from '../network'
-import type { TerminalManager } from '../terminal'
+import type { ShellSource, TerminalManager } from '../terminal'
 
 /**
  * IPC katmaninin ihtiyac duydugu servisler. Kayit fonksiyonlari modul seviyesindeki
@@ -14,6 +14,7 @@ export interface IpcContext {
   projects: ProjectStore
   vault: CredentialVault
   terminals: TerminalManager
+  shells: ShellSource
   network: NetworkConfigurator
   adapters: AdapterSource
   transfer: ProjectTransfer

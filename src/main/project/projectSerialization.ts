@@ -1,9 +1,8 @@
 import { randomUUID } from 'crypto'
 import { newProject } from '@shared/types'
 import { stepsFromYaml } from '@shared/projectYaml'
+import { DEFAULT_SHELL } from '@shared/types'
 import type { CommandDef, Project, ShellKind, TerminalDef } from '@shared/types'
-
-const SHELLS: ShellKind[] = ['powershell', 'cmd', 'ssh']
 
 /**
  * Disa/ice aktarmanin saf veri donusumleri. Dosya secme ve disk erisimi
@@ -53,7 +52,7 @@ function toArray(value: unknown): Record<string, unknown>[] {
 }
 
 function toCommand(raw: Record<string, unknown>): CommandDef {
-  const shell = String(raw.shell) as ShellKind
+  const shell = String(raw.shell ?? '').toLowerCase() as ShellKind
   // Eski bicimde `text` tek metindi; her satir bir send adimi olur.
   const steps = Array.isArray(raw.steps)
     ? stepsFromYaml(raw.steps)
@@ -65,7 +64,8 @@ function toCommand(raw: Record<string, unknown>): CommandDef {
     id: randomUUID(),
     name: String(raw.name ?? ''),
     target: typeof raw.target === 'string' ? raw.target : undefined,
-    shell: SHELLS.includes(shell) ? shell : 'powershell',
+    // Baska bir makinede uretilmis dosya olabilir; kabuk adi calistirma aninda cozulur.
+    shell: shell || DEFAULT_SHELL,
     runInNewTab: Boolean(raw.runInNewTab),
     steps
   }

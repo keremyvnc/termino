@@ -1,4 +1,4 @@
-import type { Project, AdapterInfo, NetworkProfile, ScriptStep } from './types'
+import type { Project, AdapterInfo, NetworkProfile, ScriptStep, ShellInfo } from './types'
 
 export interface NetApplyResult {
   ok: boolean
@@ -34,7 +34,8 @@ export interface NetContext {
 export interface TermCreateOptions {
   id: string
   kind: 'local' | 'ssh'
-  shell: 'powershell' | 'cmd'
+  /** Yerel kabuk kimligi (bash, powershell, cmd ...) ya da 'default'. */
+  shell: string
   cwd?: string
   cols?: number
   rows?: number
@@ -73,6 +74,8 @@ export interface TerminoApi {
     onAutoApplied(cb: (ev: NetAutoEvent) => void): () => void
   }
   term: {
+    /** Sistemde bulunan yerel kabuklar; ilk sirada varsayilan olan gelir. */
+    shells(): Promise<ShellInfo[]>
     create(opts: TermCreateOptions): Promise<string>
     write(id: string, data: string): void
     resize(id: string, cols: number, rows: number): void
@@ -114,6 +117,7 @@ export const IPC = {
   netRestore: 'net:restore',
   netBackup: 'net:backup',
   netAutoApplied: 'net:autoApplied',
+  termShells: 'term:shells',
   termCreate: 'term:create',
   termWrite: 'term:write',
   termResize: 'term:resize',

@@ -32,7 +32,7 @@ A project is a folder: **sessions**, **commands** and a **network profile**, all
 
 | | |
 |---|---|
-| 🖥️ **Local terminal** | PowerShell / CMD tabs powered by xterm.js + node-pty, Ctrl+F search, copy & paste |
+| 🖥️ **Local terminal** | Tabs for whatever shells the machine has (PowerShell, CMD, bash, zsh ...) powered by xterm.js + node-pty, Ctrl+F search, copy & paste |
 | 🔐 **SSH sessions** | Built on ssh2; passwords live in the Windows DPAPI vault and never touch YAML |
 | 🌐 **Network profiles** | Assign IP / mask / gateway to an adapter, fall back to DHCP, restore the previous config. Only that step is elevated via UAC |
 | 🔌 **Auto-apply** | When the adapter comes up, the project's profile is applied automatically (matched by MAC, so renamed adapters still work) |
@@ -118,7 +118,9 @@ npm run typecheck  # type-checks main + renderer
 npm run dist       # builds the installer (release/)
 ```
 
-> Windows only: network operations rely on PowerShell + UAC, and the password vault uses DPAPI.
+> Terminals, projects and SSH run on Windows and Linux alike. Network operations still rely on
+> PowerShell + UAC, and the password vault uses DPAPI on Windows and libsecret on Linux.
+> See INSTALLATION-UBUNTU.md for the Linux setup.
 
 ## Architecture
 

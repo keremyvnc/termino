@@ -1,16 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { ChevronDown, Plus, Terminal as TerminalIcon } from 'lucide-react'
 import type { LocalShell } from '../../store/terminalTabs'
-
-const SHELLS: { kind: LocalShell; label: string; hint: string }[] = [
-  { kind: 'powershell', label: 'PowerShell', hint: 'default' },
-  { kind: 'cmd', label: 'Command Prompt', hint: 'cmd.exe' }
-]
+import { useShellStore } from '../../store/useShellStore'
 
 /** "Terminal" dugmesi ve kabuk turu menusu. */
 export function NewTerminalButton({ onOpen }: { onOpen(shell?: LocalShell): void }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
+  // Menu sistemde gercekten bulunan kabuklari gosterir; ilki varsayilandir.
+  const shells = useShellStore((s) => s.shells)
 
   useEffect(() => {
     if (!menuOpen) return
@@ -32,7 +30,7 @@ export function NewTerminalButton({ onOpen }: { onOpen(shell?: LocalShell): void
     <div ref={containerRef} className="relative mb-1 flex shrink-0 items-center">
       <button
         className="btn btn-primary rounded-r-none border-r-0"
-        title="New PowerShell tab (Ctrl+Shift+T)"
+        title={`New ${shells[0]?.label ?? 'terminal'} tab (Ctrl+Shift+T)`}
         onClick={() => onOpen()}
       >
         <Plus size={13} /> Terminal
@@ -50,21 +48,27 @@ export function NewTerminalButton({ onOpen }: { onOpen(shell?: LocalShell): void
       {menuOpen && (
         <div
           role="menu"
-          className="fade-in absolute right-0 top-8 z-20 w-48 rounded-md border border-border bg-panel-2 p-1 shadow-lg"
+          className="fade-in absolute right-0 top-8 z-20 w-56 rounded-md border border-border bg-panel-2 p-1 shadow-lg"
         >
-          {SHELLS.map(({ kind, label, hint }) => (
+          {shells.length === 0 && (
+            <div className="px-2 py-1.5 text-xs text-muted">No shell found on this system.</div>
+          )}
+          {shells.map((shell) => (
             <button
-              key={kind}
+              key={shell.id}
               role="menuitem"
               className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs hover:bg-panel-3"
+              title={shell.path}
               onClick={() => {
                 setMenuOpen(false)
-                onOpen(kind)
+                onOpen(shell.id)
               }}
             >
               <TerminalIcon size={12} className="text-muted" />
-              {label}
-              <span className="ml-auto text-[11px] text-muted">{hint}</span>
+              {shell.label}
+              {shell.isDefault && (
+                <span className="ml-auto text-[11px] text-muted">default</span>
+              )}
             </button>
           ))}
         </div>

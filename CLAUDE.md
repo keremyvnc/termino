@@ -41,10 +41,10 @@ src/main/
                   projectTransfer.ts (dosya secme diyaloglari)
   terminal/       TerminalSession.ts (arayuzler), LocalPtySession, SshSession,
                   sessionFactories.ts (tur kaydi), TerminalManager, ScriptQueue,
-                  ScriptRunner, variableResolver.ts, ansi.ts
+                  ScriptRunner, variableResolver.ts, ansi.ts, shells.ts (kabuk taramasi)
 src/preload/      `window.api` koprusu (contextIsolation + sandbox acik)
 src/renderer/src/
-  store/          useAppStore, useTerminalStore (yalnizca durum),
+  store/          useAppStore, useTerminalStore, useShellStore (yalnizca durum),
                   terminalTabs.ts (sekme uretimi), commandTargets.ts (komut hangi sekmede calisir),
                   projectVariables.ts ({{degisken}} onizlemesi), useEditorStore
   components/     sidebar/ (agac), editor/ (CodeMirror + SecretsBar), terminalArea/ (sekmeler),
@@ -159,6 +159,9 @@ SOLID'e gore ayristirma. Yeni kod yazarken bu sinirlari koru:
 - Adaptor eslemesi MAC ile yapilir, adaptor adiyla degil (adlar degisir).
 - IP atama yonetici hakki ister; uygulamanin tamami degil, sadece o islem UAC ile yukseltilir (Asama 3).
 - Terminal turleri saglayici (provider) arayuzu uzerinden eklenir: local, ssh, ileride serial/telnet (Asama 4).
+- Kabuk adi hicbir yerde sabit yazilmaz. Sistemde ne varsa `main/terminal/shells.ts` bulur; arayuz
+  listeyi `term:shells` ile alir. Bilinmeyen kabuk adi (baska isletim sisteminde yazilmis proje)
+  sessizce varsayilana duser. Windows ve Linux ayrimi yalnizca bu dosyada.
 - UI metinleri Ingilizce (kullanici istegi, Eylul 2026). Kod yorumlari Turkce kalabilir.
 
 ## Asamalar
@@ -171,3 +174,21 @@ SOLID'e gore ayristirma. Yeni kod yazarken bu sinirlari koru:
 6. YAML dosya agaci: proje dizinleri, sessions/commands dosyalari, CodeMirror editor, komut surusu calistirma (tamamlandi)
 7. Yapisal duzen: main ve renderer'in SOLID'e gore ayristirilmasi, ortak yardimcilarin `shared` altina alinmasi (tamamlandi)
 8. Arayuz duzeni: Overview sayfasi, durum cubugu, onay diyalogu, katlanir ag paneli, form bolumleri (tamamlandi)
+9. Kabuk taramasi: sistemdeki kabuklarin bulunmasi ve onerilmesi, Linux uyumu (terminal tarafi tamamlandi; ag paneli bekliyor)
+
+## Kabuk taramasi ve Linux (Asama 9)
+
+- `main/terminal/shells.ts`: sistemdeki yerel kabuklari bulur. Windows'ta System32 yollari + PATH
+  (powershell, pwsh, cmd, wsl, git bash), Linux/macOS'ta `/etc/shells` + `$SHELL` + PATH taramasi.
+  Ayni kabuk birden cok yoldan gorunurse (ornek `/bin/bash` ve `/usr/bin/bash`) bir kez listelenir.
+- Tarama `ShellProbe` (platform, env, exists, readFile) uzerinden yapilir; testte sahte bir sistem
+  verilerek Linux davranisi Windows uzerinde sinanabilir (`discoverShells(probe)`).
+- Kabuk kimligi = calistirilabilirin adi (`bash`, `zsh`, `powershell`, `cmd`). `DEFAULT_SHELL`
+  (`'default'`) "her makinenin varsayilani" demektir; yeni komut dosyalari bunu yazar, boylece
+  proje isletim sistemleri arasinda tasinabilir. Bilinmeyen kimlik `resolveShell` icinde varsayilana duser.
+- Acilis kapisi (`startupGate`) yalnizca PowerShell ailesinde devrededir (`hidesStartupOutput`);
+  bash/zsh ciktisi dogrudan ekrana gider, 4 saniyelik bekleme yoktur.
+- Calisma dizini `os.homedir()`; `USERPROFILE` varsayimi kalmadi.
+- Linux'ta calismayan tek alan ag paneli: `network/` tamamen PowerShell + UAC. Karsiligi `nmcli`/`ip`
+  ve `pkexec`; `AdapterSource` ve `NetworkApplier` arayuzleri hazir, yeni sinif + `services.ts` tek satir.
+- Kurulum ve eksikler: `INSTALLATION-UBUNTU.md`.

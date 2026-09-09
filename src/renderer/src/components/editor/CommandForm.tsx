@@ -1,6 +1,7 @@
-import type { CommandDef, Project, ShellKind } from '@shared/types'
+import { DEFAULT_SHELL, SSH_SHELL, type CommandDef, type Project, type ShellKind } from '@shared/types'
 import { countSteps } from '@shared/steps'
 import { useAppStore } from '../../store/useAppStore'
+import { useShellStore } from '../../store/useShellStore'
 import { Field, FormSection, TextField } from './fields'
 import { StepsEditor } from './StepsEditor'
 import { targetLabel } from './stepText'
@@ -14,6 +15,7 @@ const LOCAL_PREFIX = '__local:'
  */
 export function CommandForm({ project, cmd }: { project: Project; cmd: CommandDef }) {
   const updateProject = useAppStore((s) => s.updateProject)
+  const shells = useShellStore((s) => s.shells)
 
   const patch = (changes: Partial<CommandDef>): void => {
     void updateProject({
@@ -27,9 +29,16 @@ export function CommandForm({ project, cmd }: { project: Project; cmd: CommandDe
     if (value.startsWith(LOCAL_PREFIX)) {
       patch({ target: undefined, shell: value.slice(LOCAL_PREFIX.length) as ShellKind })
     } else {
-      patch({ target: value, shell: 'ssh' })
+      patch({ target: value, shell: SSH_SHELL })
     }
   }
+
+  // Baska bir makinede yazilmis komut: kabuk burada yoksa secim kaybolmasin diye gosterilir.
+  const unknownShell =
+    !cmd.target &&
+    cmd.shell !== SSH_SHELL &&
+    cmd.shell !== DEFAULT_SHELL &&
+    !shells.some((s) => s.id === cmd.shell)
 
   const total = countSteps(project, cmd.steps)
   const sessions = project.terminals.filter((t) => t.kind !== 'web')
@@ -54,9 +63,20 @@ export function CommandForm({ project, cmd }: { project: Project; cmd: CommandDe
                 </optgroup>
               )}
               <optgroup label="Local">
-                <option value={`${LOCAL_PREFIX}powershell`}>Local PowerShell</option>
-                <option value={`${LOCAL_PREFIX}cmd`}>Local CMD</option>
-                <option value={`${LOCAL_PREFIX}ssh`}>Currently open SSH tab</option>
+                <option value={`${LOCAL_PREFIX}${DEFAULT_SHELL}`}>
+                  Default shell on each machine
+                </option>
+                {shells.map((shell) => (
+                  <option key={shell.id} value={`${LOCAL_PREFIX}${shell.id}`}>
+                    Local {shell.label}
+                  </option>
+                ))}
+                {unknownShell && (
+                  <option value={`${LOCAL_PREFIX}${cmd.shell}`}>
+                    Local {cmd.shell} (not installed here)
+                  </option>
+                )}
+                <option value={`${LOCAL_PREFIX}${SSH_SHELL}`}>Currently open SSH tab</option>
               </optgroup>
             </select>
           </Field>

@@ -1,6 +1,7 @@
-import type { CommandDef, Project, ScriptStep, TerminalDef } from '@shared/types'
+import { SSH_SHELL, type CommandDef, type Project, type ScriptStep, type TerminalDef } from '@shared/types'
 import { findCommand, countSteps } from '@shared/steps'
 import { expandVariables } from '../../store/projectVariables'
+import { shellLabel } from '../../store/useShellStore'
 
 /**
  * Adimlarin insan diline cevrilmis hali. Agactaki ipucu, komut ozeti ve
@@ -39,8 +40,8 @@ export function targetLabel(cmd: CommandDef, project: Project): string {
     )
     return def ? sessionLabel(def) : `${cmd.target} (session not found)`
   }
-  if (cmd.shell === 'ssh') return 'Open SSH session'
-  return cmd.shell === 'cmd' ? 'Local CMD' : 'Local PowerShell'
+  if (cmd.shell === SSH_SHELL) return 'Open SSH session'
+  return `Local ${shellLabel(cmd.shell)}`
 }
 
 export function sessionLabel(def: TerminalDef): string {

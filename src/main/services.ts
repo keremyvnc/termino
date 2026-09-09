@@ -6,7 +6,7 @@ import { FileLogger, type Logger } from './logger'
 import { AdapterWatcher, NetworkConfigurator, systemAdapters } from './network'
 import { ProjectStore } from './project/projectStore'
 import { ProjectTransfer } from './project/projectTransfer'
-import { TerminalManager } from './terminal'
+import { systemShells, TerminalManager } from './terminal'
 import { WebContentsTerminalSink } from './ipc/terminalEventSink'
 import type { IpcContext } from './ipc'
 
@@ -55,6 +55,15 @@ export function createServices(getWindow: () => BrowserWindow | null): Services 
     logger,
     terminals,
     adapterWatcher,
-    ipc: { logger, projects, vault, terminals, network, adapters: systemAdapters, transfer }
+    ipc: {
+      logger,
+      projects,
+      vault,
+      terminals,
+      shells: systemShells,
+      network,
+      adapters: systemAdapters,
+      transfer
+    }
   }
 }

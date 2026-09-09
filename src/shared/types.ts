@@ -1,7 +1,26 @@
 // Paylasilan veri modeli: hem main hem renderer bunu kullanir.
 
-export type ShellKind = 'powershell' | 'cmd' | 'ssh'
+/**
+ * Komutun nerede calisacagi: 'ssh' ya da bir yerel kabuk kimligi
+ * (bash, zsh, powershell, cmd ...). Kimlikler sistemde bulunan kabuklardan gelir,
+ * sabit bir liste yoktur; bilinmeyen kimlik varsayilan kabuga duser.
+ */
+export type ShellKind = string
 export type TerminalKind = 'local' | 'ssh' | 'web'
+
+/** Aktif kabuk yerine "sistemin varsayilani" demenin yolu. */
+export const DEFAULT_SHELL = 'default'
+export const SSH_SHELL = 'ssh'
+
+/** Sistemde bulunan bir yerel kabuk. Liste main tarafinda uretilir (terminal/shells.ts). */
+export interface ShellInfo {
+  id: string
+  label: string
+  /** Calistirilabilirin tam yolu; arayuzde ipucu olarak gosterilir. */
+  path: string
+  hint?: string
+  isDefault?: boolean
+}
 
 /**
  * Komut dosyasi (commands/<ad>.yaml): sirayla calisan bir adim surusu.

@@ -6,7 +6,7 @@ import { StepsEditor } from './StepsEditor'
 
 const KIND_LABELS: { value: TerminalKind; label: string; hint: string }[] = [
   { value: 'ssh', label: 'SSH', hint: 'Log in to a device over SSH' },
-  { value: 'local', label: 'Local PowerShell', hint: 'A PowerShell tab on this PC' },
+  { value: 'local', label: 'Local shell', hint: 'A shell tab on this PC' },
   { value: 'web', label: 'Web address', hint: 'Open a page in the browser' }
 ]
 

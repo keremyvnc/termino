@@ -31,6 +31,7 @@ const api: TerminoApi = {
     }
   },
   term: {
+    shells: () => ipcRenderer.invoke(IPC.termShells),
     create: (opts: TermCreateOptions) => ipcRenderer.invoke(IPC.termCreate, opts),
     write: (id, data) => ipcRenderer.send(IPC.termWrite, id, data),
     resize: (id, cols, rows) => ipcRenderer.send(IPC.termResize, id, cols, rows),

@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useAppStore, useSelectedProject } from './store/useAppStore'
 import { useUiStore } from './store/useUiStore'
+import { useShellStore } from './store/useShellStore'
 import { TitleBar } from './components/TitleBar'
 import { StatusBar } from './components/StatusBar'
 import { Sidebar } from './components/sidebar/Sidebar'
@@ -15,6 +16,7 @@ import { NewProjectDialog } from './components/NewProjectDialog'
 
 export default function App() {
   const load = useAppStore((s) => s.load)
+  const loadShells = useShellStore((s) => s.load)
   const setProjects = useAppStore((s) => s.setProjects)
   const setAdapters = useAppStore((s) => s.setAdapters)
   const showToast = useAppStore((s) => s.showToast)
@@ -28,6 +30,7 @@ export default function App() {
 
   useEffect(() => {
     void load()
+    void loadShells()
     const offProjects = window.api.projects.onChanged(setProjects)
     const offAdapters = window.api.network.onAdaptersChanged(setAdapters)
     const offAuto = window.api.network.onAutoApplied((ev) => {
@@ -44,7 +47,7 @@ export default function App() {
       offAdapters()
       offAuto()
     }
-  }, [load, setProjects, setAdapters, showToast, refreshAdapters])
+  }, [load, loadShells, setProjects, setAdapters, showToast, refreshAdapters])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {

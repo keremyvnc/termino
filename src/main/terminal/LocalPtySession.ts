@@ -1,10 +1,12 @@
 import * as pty from 'node-pty'
+import { homedir } from 'os'
 import type { TermCreateOptions } from '@shared/ipc'
 import type { ScriptStep } from '@shared/types'
 import { ScriptQueue } from './ScriptQueue'
 import * as ansi from './ansi'
 import { createStartupGate } from './startupGate'
 import { createVariableResolver } from './variableResolver'
+import { resolveShell, type ShellSpec } from './shells'
 import type { SessionContext, SessionHooks, TerminalSession } from './TerminalSession'
 
 const DEFAULT_COLS = 120
@@ -20,7 +22,8 @@ export class LocalPtySession implements TerminalSession {
   constructor(context: SessionContext) {
     this.id = context.id
     this.hooks = context.hooks
-    this.process = spawnShell(context.options)
+    const shell = resolveShell(context.options.shell)
+    this.process = spawnShell(context.options, shell)
     this.scripts = new ScriptQueue(
       {
         write: (data) => this.write(data),
@@ -30,8 +33,8 @@ export class LocalPtySession implements TerminalSession {
     )
 
     // PowerShell acilis ciktisi (profil mesajlari/hatalari) Clear-Host'a kadar ekrana gitmez.
-    const isPowerShell = context.options.shell !== 'cmd'
-    const gate = isPowerShell
+    // Diger kabuklarda boyle bir isaret yok; cikti dogrudan ekrana gider.
+    const gate = shell.hidesStartupOutput
       ? createStartupGate({
           emit: (data) => this.hooks.onData(data),
           onDiscard: (text) =>
@@ -76,19 +79,15 @@ export class LocalPtySession implements TerminalSession {
   }
 }
 
-function spawnShell(options: TermCreateOptions): pty.IPty {
-  const isCmd = options.shell === 'cmd'
-  const file = isCmd ? 'cmd.exe' : (process.env['TERMINO_PWSH'] ?? 'powershell.exe')
-  // Profil ciktisi (ornek: profildeki basibos ifadeler) ekrana gelmesin:
-  // profil yuklenir, ardindan ekran temizlenir.
-  const args = isCmd ? [] : ['-NoLogo', '-NoExit', '-Command', 'Clear-Host']
-
-  return pty.spawn(file, args, {
+/** Hangi kabugun calisacagina `shells.ts` karar verir; burasi yalnizca baslatir. */
+function spawnShell(options: TermCreateOptions, shell: ShellSpec): pty.IPty {
+  return pty.spawn(shell.path, shell.args, {
     name: 'xterm-256color',
     cols: options.cols ?? DEFAULT_COLS,
     rows: options.rows ?? DEFAULT_ROWS,
-    cwd: options.cwd ?? process.env['USERPROFILE'] ?? 'C:\\',
+    cwd: options.cwd ?? homedir(),
     env: { ...process.env, TERM: 'xterm-256color', TERMINO: '1' } as Record<string, string>,
+    // Windows disinda yok sayilir.
     useConpty: true
   })
 }

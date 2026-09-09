@@ -1,6 +1,7 @@
 import { Globe, Play, Server, Terminal, Zap } from 'lucide-react'
 import type { CommandDef, Project, TerminalDef } from '@shared/types'
 import { expandVariables } from '../../store/projectVariables'
+import { defaultShell, shellList } from '../../store/useShellStore'
 
 export type PaletteGroup = 'command' | 'session' | 'action'
 
@@ -17,7 +18,7 @@ export interface PaletteItem {
 export interface PaletteActions {
   runCommand(project: Project, cmd: CommandDef): Promise<void>
   openDef(project: Project, def: TerminalDef): Promise<string>
-  openTerminal(projectId: string, opts: { project: Project; shell?: 'cmd' }): Promise<string>
+  openTerminal(projectId: string, opts: { project: Project; shell?: string }): Promise<string>
   showToast(message: string): void
 }
 
@@ -70,7 +71,7 @@ function sessionItem(project: Project, def: TerminalDef, actions: PaletteActions
 function sessionHint(def: TerminalDef): string {
   if (def.kind === 'ssh') return `${def.username}@${def.host}:${def.port}`
   if (def.kind === 'web') return def.url ?? ''
-  return 'local PowerShell'
+  return `local ${defaultShell()?.label ?? 'shell'}`
 }
 
 function sessionIcon(def: TerminalDef): React.ReactNode {
@@ -80,23 +81,18 @@ function sessionIcon(def: TerminalDef): React.ReactNode {
 }
 
 function quickActions(project: Project, actions: PaletteActions): PaletteItem[] {
+  // Kabuk girdileri sistemde bulunanlardan uretilir; ilki varsayilandir.
+  const shellActions: PaletteItem[] = shellList().map((shell, i) => ({
+    id: `a:shell:${shell.id}`,
+    group: 'action',
+    label: `New ${shell.label}`,
+    hint: i === 0 ? 'Ctrl+Shift+T' : shell.path,
+    icon: <Terminal size={13} className="text-muted" />,
+    run: () => actions.openTerminal(project.id, { project, shell: shell.id })
+  }))
+
   return [
-    {
-      id: 'a:ps',
-      group: 'action',
-      label: 'New PowerShell',
-      hint: 'Ctrl+Shift+T',
-      icon: <Terminal size={13} className="text-muted" />,
-      run: () => actions.openTerminal(project.id, { project })
-    },
-    {
-      id: 'a:cmd',
-      group: 'action',
-      label: 'New CMD',
-      hint: '',
-      icon: <Terminal size={13} className="text-muted" />,
-      run: () => actions.openTerminal(project.id, { project, shell: 'cmd' })
-    },
+    ...shellActions,
     {
       id: 'a:net',
       group: 'action',

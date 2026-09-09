@@ -14,6 +14,7 @@ import {
   Unplug,
   Zap
 } from 'lucide-react'
+import { defaultShell } from '../../store/useShellStore'
 import type { AdapterInfo, CommandDef, Project, TerminalDef } from '@shared/types'
 import { useAppStore } from '../../store/useAppStore'
 import { useEditorStore, type FileKind } from '../../store/useEditorStore'
@@ -95,7 +96,7 @@ export function ProjectOverview({
 
         <div className="flex items-center gap-3 border-t border-border pt-4 text-xs text-muted">
           <button className="btn btn-ghost" onClick={onOpenTerminal}>
-            <Terminal size={13} /> Open a plain PowerShell tab
+            <Terminal size={13} /> Open a plain {defaultShell()?.label ?? 'terminal'} tab
           </button>
           <span className="flex-1" />
           <span>Tip: double-click a file in the tree to run it.</span>
@@ -272,7 +273,7 @@ function SessionCard({
       ? `${def.username || '?'}@${def.host || '?'}${def.port && def.port !== 22 ? `:${def.port}` : ''}`
       : def.kind === 'web'
         ? def.url || 'no address'
-        : 'Local PowerShell'
+        : `Local ${defaultShell()?.label ?? 'shell'}`
   const actionLabel = def.kind === 'web' ? 'Open' : running ? 'Show' : 'Connect'
 
   return (

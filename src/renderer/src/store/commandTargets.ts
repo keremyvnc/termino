@@ -1,6 +1,7 @@
-import type { CommandDef, Project, TerminalDef } from '@shared/types'
+import { SSH_SHELL, type CommandDef, type Project, type TerminalDef } from '@shared/types'
 import { toSlug } from '@shared/projectYaml'
 import { isAlive, type LocalShell, type TermTab } from './terminalTabs'
+import { resolveShellId } from './useShellStore'
 
 /** Komutun nerede calisacagi. Karar burada verilir, uygulama store'da yapilir. */
 export type CommandPlan =
@@ -44,15 +45,18 @@ export function planCommandRun(
     return { type: 'openDef', def, fresh: cmd.runInNewTab }
   }
 
-  if (cmd.shell === 'ssh') return planSshRun(project, cmd, tabs, active)
+  if (cmd.shell === SSH_SHELL) return planSshRun(project, cmd, tabs, active)
 
+  // Dosyadaki kabuk adi bu makinede yoksa varsayilana duser; karsilastirma
+  // cozulmus kimlikle yapilir, boylece acik sekme gereksiz yere cogalmaz.
+  const shell = resolveShellId(cmd.shell)
   const reusable =
     !cmd.runInNewTab &&
     active &&
     active.kind === 'local' &&
     isAlive(active, project.id) &&
-    active.shell === cmd.shell
-  return reusable ? { type: 'useTab', tabId: active.id } : { type: 'openLocal', shell: cmd.shell }
+    active.shell === shell
+  return reusable ? { type: 'useTab', tabId: active.id } : { type: 'openLocal', shell }
 }
 
 /** Aktif SSH sekmesi tercih edilir; yoksa projedeki ilk SSH tanimi acilir. */
